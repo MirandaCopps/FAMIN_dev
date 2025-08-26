@@ -4,6 +4,9 @@ FAMIN development and validation with mood drift
 This folder contains the documents for the Food and Mood Inventory (FAMIN) development paper
 \
 \
+It will be updated to contain all relevant materials in advance of the paper submission.
+\
+\
 R code, main text, supplements and all figures and tables are contained with the Quarto file (.qmd)
 \
 \
