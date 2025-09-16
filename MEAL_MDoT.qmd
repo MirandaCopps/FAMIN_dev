@@ -1,0 +1,3033 @@
+---
+title: "'Hanger' and beyond: measuring hunger-related mood dysregulation and its links with mental health, functioning and task-based mood induction"
+author: Miranda Copps 
+execute:
+  echo: false
+  warning: false
+format: 
+  docx:
+    toc: false
+    number-sections: false
+    highlight-style: github
+    reference-doc: custom-reference-doc.docx
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    keep-md: false
+fig-dpi: 300
+fig-align: left
+crossref:
+  custom:
+    - kind: float
+      key: supptbl
+      reference-prefix: Table S
+      space-before-numbering: false
+      caption-location: top
+    - kind: float
+      key: suppfig
+      reference-prefix: Figure S
+      space-before-numbering: false
+      caption-location: top
+lang: en-GB
+keywords: [mood, hunger, emotion, appetite, psychometrics, frustration, happiness, boredom]
+bibliography: references.bib
+csl: apa.csl
+---
+
+Miranda Copps^1^, Pablo Vidal-Ribas^2^, Layla Sadek^3^, Clare Llewellyn^4^, Moritz Herle^5^, Gerome Breen^5,6^, Karina Allen^7,8^, Anna Carnegie^5^, Lu Qi^5^, Rosemary Chandler-Wilde^5^, Saakshi Kakar^5,6^, Iona Smith^5,6^, Jutta Joormann^9^, Essi Viding^1^\*, Argyris Stringaris^3^\*
+
+### Financial support
+
+This study was funded by Anna Freud (charity number: 1077106) via MC's PhD position. PVR is supported by grant RYC2021-033369-I, funded by MCIN/AEI/10.13039/501100011033 and the European Union «NextGenerationEU/PRTR» and the CERCA program/Generalitat de Catalunya. KA, GB, AC, LQ and RCW are supported by the Medical Research Council grant no. MR/X030539/1. SK and IS are supported by funding from the National Institute for Health and Care Research (NIHR) Maudsley Biomedical Research Centre (BRC); CL is supported by funding from the NIHR Healthy Weight Policy Research Unit (PR-PRU-0916-21001; grant number 174868). The views expressed are those of the author(s) and not necessarily those of the NIHR or the Department of Health and Social Care. The funders had no role in the design, methods, results, interpretation, writing, or conclusions of this manuscript.
+
+\
+
+1.  Division of Psychology and Language Sciences, University College London, London, UK
+2.  Child and Adolescent Mental Health Research Group, Institut de Recerca Sant Joan de Déu (IRSJD), Esplugues de Llobregat, Barcelona, Spain
+3.  Division of Psychiatry, University College London, London, UK
+4.  Department of Behavioural Science & Health, University College London, London, UK
+5.  Social, Genetic & Developmental Psychiatry Centre, Institute of Psychiatry, Psychology & Neuroscience, King's College London, London, UK
+6.  UK National Institute for Health and Social Care Research (NIHR) Biomedical Research Centre for Mental Health, South London and Maudsley Hospital, London, UK
+7.  Eating Disorders Service, South London and Maudsley NHS Foundation Trust, London, UK
+8.  Centre for Research in Eating and Weight Disorders, Institute of Psychiatry, Psychology & Neuroscience, King's College London
+9.  Department of Psychology, Yale University, New Haven, CT, USA
+
+\
+\*EV and AS share joint last author.
+\
+Word Count: 4,434
+
+```{r Setup, message = FALSE, results= FALSE, echo = FALSE, warning = FALSE}
+options(knitr.kable.NA = '')
+
+# load packages
+library(here)
+library(purrr)
+library(tidyverse)
+library(Hmisc)
+library(rstatix)
+library(lavaan)
+library(semTools)
+library(psych)
+library(DescTools)
+library(polycor) 
+library(lme4)
+library(lmerTest)
+library(nlme)
+library(corrplot)
+library(kableExtra)
+library(ltm)
+library(conflicted)
+library(paran)
+library(flextable)
+library(broom)
+library(broom.mixed)
+library(sdamr)
+library(ggpubr)
+library(semPlot)
+library(data.table)
+
+# to specify project root
+here::i_am("MEAL_MDoT.qmd")
+
+# load the dataframes
+scal_pr <- read_csv("MEALscal.csv") # questionnaires and demographics (prolific)
+mood_pr <- read_csv("MEALmood.csv") # task data (prolific)
+scal_ad <- read_csv("MEALscal_ado.csv") # adolescent quest + demog data
+mood_ad <- read_csv("MEALmood_ado.csv") # adolescent task data
+# en for enriched sample
+scal_en <- read_csv("scal_kcl.csv") # GLAD and EDGI participants
+
+options(scipen = 9)
+
+# Conflicts
+conflicts_prefer(dplyr::select)
+conflicts_prefer(dplyr::filter)
+conflicts_prefer(lmerTest::lmer)
+conflicts_prefer(psych::alpha)
+conflicts_prefer(dplyr::first)
+
+```
+
+```{r MissingDataSens, message = FALSE, echo = FALSE}
+
+## Sensitivity Analysis
+# Use rowwise means (for each scale: MEAL, 3x MEAL subscales, ARI, PHQ, GAD) to impute missing questionnaire data
+# Adolescent data only
+# Determined that no reported resulted changed at 1st dp, therefore leave missing data missing
+
+# # Calculate MEAL (and other mental health) scores to account for missing data
+# # Only for schools data (adult data were forced choice)
+# Fac1 <- c("HM02", "HM09", "HM11", "HM15")
+# Fac2 <- c("HM14", "HM16", "HM19", "HM21")
+# Fac3 <- c("HM23", "HM24", "HM25")
+# PHQnames <- colnames((select(scal_ad, starts_with("PHQ0"))))
+# GADnames <- colnames((select(scal_ad, starts_with("GAD0"))))
+# ARInames <- c("ARI01", "ARI02", "ARI03", "ARI04", "ARI05", "ARI06") # not ARI07 for score
+#
+# MEALnames <- c(Fac1, Fac2, Fac3)
+# 
+# # For missing data replace with the rounded mean value of factor for that individual
+# scal_ad <- scal_ad %>%
+#   mutate(Fac1_mean = round(rowMeans(across(all_of(Fac1)), na.rm=TRUE))) %>%
+#   mutate(Fac2_mean = round(rowMeans(across(all_of(Fac2)), na.rm=TRUE))) %>%
+#   mutate(Fac3_mean = round(rowMeans(across(all_of(Fac3)), na.rm=TRUE))) %>%
+#   mutate(PHQ_mean = round(rowMeans(across(all_of(PHQnames)), na.rm=TRUE))) %>%
+#   mutate(GAD_mean = round(rowMeans(across(all_of(GADnames)), na.rm=TRUE))) %>%
+#   mutate(ARI_mean = if_else(sample == "5", NA, round(rowMeans(across(all_of(ARInames)), na.rm=TRUE)))) 
+# 
+# # Create a function to replace NAs with row means from above
+# replace_func <- function(df, names, m) {
+#   # Loop through each specified column
+#   for (col in names) {
+#     # Replace NA values with the mean value for that row
+#     df[[col]] <- ifelse(is.na(df[[col]]), df[[m]], df[[col]])
+#   }
+#   # Return the modified dataframe
+#   return(df)
+# }
+# 
+# # Apply the function to relevant columns
+# scal_ad <- scal_ad %>% 
+#   replace_func(names = Fac1, m = "Fac1_mean") %>% 
+#   replace_func(names = Fac2, m = "Fac2_mean") %>% 
+#   replace_func(names = Fac3, m = "Fac3_mean") %>% 
+#   replace_func(names = PHQnames, m = "PHQ_mean") %>% 
+#   replace_func(names = GADnames, m = "GAD_mean") %>% 
+#   replace_func(names = ARInames, m = "ARI_mean")
+# 
+# # Recalculate sum scores
+# scal_ad <- scal_ad %>%
+#   mutate(MEALtot = rowSums(across(all_of(MEALnames)))) %>%
+#   mutate(Fac1tot = rowSums(across(all_of(Fac1)))) %>%
+#   mutate(Fac2tot = rowSums(across(all_of(Fac2)))) %>%
+#   mutate(Fac3tot = rowSums(across(all_of(Fac3)))) %>%
+#   mutate(GADtot = rowSums(across(all_of(GADnames)))) %>%
+#   mutate(PHQ8tot = rowSums(across(all_of(PHQnames)))) %>%
+#   mutate(ARItot = rowSums(across(all_of(ARInames))),
+#          ARIav = round(rowSums(across(all_of(ARInames)))/6))
+
+```
+
+```{r CombineSamples, message = FALSE, echo = FALSE}
+
+# Combine all samples
+scal <- bind_rows(scal_pr, scal_ad, scal_en)
+
+# Grouping of samples
+scal <- scal %>%
+  mutate(group = case_match(
+  sample,
+  1 ~ "Community adults",
+  2 ~ "Community adults",
+  3 ~ "Community adults",
+  4 ~ "Adolescents",
+  5 ~ "Adolescents",
+  6 ~ "Enriched adults"
+))
+
+```
+
+```{r DemographicsTable, message = FALSE, echo = FALSE}
+
+sam <- c("Sample 1" = "1", "Sample 2" = "2", "Sample 3" = "3", "Sample 4" = "4", "Sample 5" = "5", "Sample 6" = "6")
+
+# Prep for total sample N
+ntab <- scal %>%
+  group_by(sample) %>%
+  summarise(
+    Total = n()
+  ) %>%
+  pivot_wider(names_from = sample, values_from = Total) %>%
+  rename(all_of(sam)) %>%
+  mutate(Measure = "Total N") %>%
+  relocate(Measure)
+
+# Prep for sex
+sextab <- scal %>%
+  group_by(sample, sex) %>%
+  summarise(
+    Total = n()) %>%
+  group_by(sample) %>%
+  mutate(SampleTotal = sum(Total)) %>%
+  filter(sex == "Female") %>%
+  mutate(Percent = round(Total/SampleTotal * 100),
+         Total = paste0(Total, " (", Percent, ")")) %>%
+  select(-SampleTotal, -Percent) %>%
+  pivot_wider(names_from = sample, values_from = Total) %>%
+  rename(all_of(sam)) %>%
+  mutate(Measure = "Female, n (%)") %>%
+  relocate(Measure) %>%
+  select(-sex)
+
+# Prep for age
+agetab <- scal %>%
+  group_by(sample) %>%
+  summarise(
+    Age = mean(age_yr, na.rm = TRUE),
+    AgeSD = sd(age_yr, na.rm = TRUE)
+  ) %>%
+  pivot_wider(names_from = sample, values_from = c("Age", "AgeSD")) %>%
+  mutate_if(is.numeric, round, 1) %>%
+  mutate(
+    Measure = "Age M (SD)",
+    `1` = paste0(Age_1, " (", AgeSD_1, ")"),
+    `2` = paste0(Age_2, " (", AgeSD_2, ")"),
+    `3` = paste0(Age_3, " (", AgeSD_3, ")"),
+    `4` = paste0(Age_4, " (", AgeSD_4, ")"),
+    `5` = paste0(Age_5, " (", AgeSD_5, ")"),
+    `6` = paste0(Age_6, " (", AgeSD_6, ")")
+  ) %>%
+  rename(all_of(sam)) %>%
+  select(c("Measure", "Sample 1", "Sample 2", "Sample 3", "Sample 4", "Sample 5", "Sample 6"))
+
+# Prep for ethnic
+ethtab <- scal %>%
+  mutate(ethnicity.simplified = case_match(ethnicity.simplified,
+                          "Prefer not to say" ~ "Unknown",
+                          NA ~ "Unknown",
+                          .default = ethnicity.simplified)) %>%
+  group_by(sample, ethnicity.simplified) %>%
+  summarise(
+    Total = n(),
+  ) %>%
+  group_by(sample) %>%
+  mutate(SampleTotal = sum(Total)) %>%
+  mutate(Percent = round(Total/SampleTotal * 100),
+         Total = paste0(Total, " (", Percent, ")")) %>%
+  select(-SampleTotal, -Percent) %>%
+  pivot_wider(names_from = sample, values_from = Total) %>%
+  rename(all_of(sam)) %>%
+  rename("Measure" = ethnicity.simplified)
+
+# Prep for employment
+emptab <- scal %>%
+  filter(sample %in% c("1","2","3")) %>%
+  mutate(employment.status = case_match(employment.status,
+                          "DATA_EXPIRED" ~ "Unknown",
+                          NA ~ "Unknown",
+                          "Due to start a new job within the next month" ~ "Not Working",
+                          "Not in paid work (e.g. homemaker', 'retired or disabled)" ~ "Not Working",
+                          "Unemployed (and job seeking)" ~ "Not Working",
+                          .default = employment.status)) %>%
+  group_by(sample, employment.status) %>%
+  summarise(
+    Total = n()) %>%
+  group_by(sample) %>%
+  mutate(SampleTotal = sum(Total)) %>%
+  mutate(Percent = round(Total/SampleTotal * 100),
+         Total = paste0(Total, " (", Percent, ")")) %>%
+  select(-SampleTotal, -Percent) %>%
+  pivot_wider(names_from = sample, values_from = Total) %>%
+  rename("Sample 1" = "1", "Sample 2" = "2", "Sample 3" = "3") %>%
+  rename("Measure" = employment.status) %>%
+  mutate(Measure = factor(Measure, levels = c("Full-Time", "Part-Time", "Not Working", "Other", "Unknown"))) %>%
+  arrange(Measure)
+
+
+# Prep for mental health
+scal <- scal %>%
+  mutate(mh_all = case_when(
+    mh_tho == "Yes" ~ "Yes",
+    mh_diag == "Yes" ~ "Yes",
+    mh_diag == "Prefer not to say" ~ "Prefer not to say",
+    mh_diag == "Prefer not to say" ~ "Prefer not to say",
+    TRUE ~ "No"
+  ))
+
+mhtab <- scal %>%
+  group_by(sample, mh_all) %>%
+  summarise(
+    Total = n()
+  ) %>% 
+  group_by(sample) %>%
+  mutate(SampleTotal = sum(Total)) %>%
+  mutate(Percent = round(Total/SampleTotal * 100),
+         Total = paste0(Total, " (", Percent, ")")) %>%
+  select(-SampleTotal, -Percent) %>%
+  pivot_wider(names_from = sample, values_from = Total) %>%
+  rename(all_of(sam)) %>%
+  rename("Measure" = mh_all) %>%
+  arrange(factor(Measure, levels = c('Yes', 'No', 'Prefer not to say')))
+
+```
+
+```{r HungerMoodQu, message = FALSE, echo = FALSE}
+
+# HM = prefix for MEAL items
+# Note: through the two phases of development there are 26 items in total
+# The final items are renamed later on
+
+# Create list of vars
+# Note: these are in the order they appeared to participants
+EFAnames <- c("HM01", "HM02", "HM03", "HM04", "HM05", "HM06", "HM07", "HM08", "HM09", "HM10", "HM11", "HM12", "HM13", "HM14", "HM15", "HM16", "HM17", "HM18", "HM19", "HM20")
+CFAnames <- c("HM09", "HM23", "HM21", "HM27", "HM26", "HM24", "HM05", "HM16", "HM25", "HM11", "HM19", "HM14", "HM02", "HM22", "HM15")
+
+# Create labels for ease of visualisation/understanding (used later)
+# First for EFA variables
+EFAlabels <- c("When I have not eaten in a while I get angry easily or can lose my temper",
+              "When I have not eaten in a while I have more arguments with people or snap at people more",
+              "When I have not eaten in a while I feel happy",
+              "When I have not eaten in a while I have said and done things that I have regretted later ",
+              "When I have not eaten in a while people think I'm tired",
+              "When I have not eaten in a while even small things can irritate me",
+              "When I have not eaten in a while I find it hard to concentrate or to finish tasks",
+              "When I have not eaten in a while I find it harder to do my work",
+              "When I have not eaten in a while my friends/family/partner/others tend to notice it because of my mood/behaviour",
+              "I make more thoughtful decisions when I have eaten enough",
+              "When I have not eaten in a while I get more irritable than other people I know",
+              "My anger/irritability decreases once I have eaten",
+              "When I have not eaten in a while I have done or said things that have caused problems in my relationships with others",
+              "When I have not eaten in a while I get more sad than other people I know",
+              "When I have not eaten in a while I feel impatient",
+              "When I have not eaten in a while I can feel sad",
+              "When I have not eaten in a while people close to me notice a pattern of me seeming more irritable or short tempered",
+              "When I have not eaten in a while I can feel irritable",
+              "When I have not eaten in a while I get anxious/nervous or worrisome",
+              "When I have not eaten in a while I get frustrated more easily")
+
+EFAlabels_df <- as.data.frame(cbind(EFAnames, EFAlabels))
+
+## And for CFA (sample 2 and 3)
+CFAlabels <- c(
+ "When I have not eaten in a while other people notice a change in my mood or behaviour",
+ "When I have not eaten in a while I get a headache",
+ "When I have not eaten in a while I lose motivation and interest in things",
+ "When I have not eaten in a while I can get restless or fidgety",
+ "When I have not eaten in a while I feel strange in my body",
+ "When I have not eaten in a while I feel sick or nauseous",
+ "When I have not eaten in a while people think I’m tired",
+ "When I have not eaten in a while I feel sad",
+ "When I have not eaten in a while I feel weak or dizzy", 
+ "When I have not eaten in a while I feel more irritated or grumpy than others",
+ "When I have not eaten in a while I feel anxious or nervous",
+ "When I have not eaten in a while I become tearful or weepy",
+ "When I have not eaten in a while I argue or snap at people more",
+ "When I have not eaten in a while my energy is lower",
+ "When I have not eaten in a while I feel impatient"
+)
+
+CFAlabels_df <- as.data.frame(cbind(CFAnames, CFAlabels))
+
+```
+
+```{r EFAprep, message = FALSE, echo = FALSE}
+
+# Only HM EFA columns and drop other rows (sample 1 only, N=202)
+df_efa <- scal %>%
+  dplyr::select(all_of(EFAnames) | ends_with("participant")) %>%
+  drop_na(HM01)
+
+# Item Correlations (20 items) 
+efacorr <- df_efa %>%
+  select(all_of(EFAnames)) %>%
+  cor_mat(method = "pearson") %>%
+  pull_triangle(triangle = "upper", diagonal = FALSE) %>% 
+  cor_mark_significant(.,
+  cutpoints = c(0, 0.001, 0.01, 0.05, 1),
+  symbols = c("***", "**", "*", ""))
+# remove items HM01, HM03, HM08, HM18
+
+# Create the new list of HM names
+EFAnames2 <- c("HM02", "HM04", "HM05", "HM06", "HM07", "HM09", "HM10", "HM11", "HM12",  "HM13", "HM14", "HM15", "HM16", "HM17", "HM19", "HM20")
+
+```
+
+```{r EFAfitfunc, message = FALSE, echo = FALSE,}
+### Exploratory Factor Analysis Model Fitting ###
+# See appendix for parallel analysis, indicated 3 factors
+
+# Create a function to fit an EFA model and show the fit indices in a neat output format
+# The output includes the model objects(s) and the summary table
+
+efa_fits <- function(data, column_names, nfactors, caption) {
+  # Check if nfactors is a range or single number and adjust accordingly
+  nfactors <- if (length(nfactors) == 1) seq_len(nfactors) else nfactors
+  
+  # Fit the EFA model
+  efa_fit <- efa(data = data[column_names], nfactors = nfactors, estimator = "ML")
+  
+  # Initialize list to store fit indices
+  fits_list <- list()
+  
+  # Extract fit indices for each factor model
+  for (f in nfactors) {
+    fits <- fitMeasures(efa_fit[[f]], c("aic", "bic", "cfi", "tli", "rmsea", "srmr", "chisq", "df", "pvalue"))
+    fits_list[[f]] <- fits
+  }
+  
+  # Combine the results into a data frame
+  fits_df <- bind_rows(fits_list, .id = "n_factors")
+  fits_df <- fits_df %>%
+    mutate(n_factors = as.character(nfactors)) %>%
+    mutate(across(c(aic, bic, cfi, tli, rmsea, srmr, chisq, df), as.numeric)) %>%
+    mutate_if(is.numeric, round, 2) %>%
+    mutate(pvalue = round(as.numeric(pvalue), 3)) %>%
+    rename(AIC = aic, BIC = bic, CFI = cfi, TLI = tli, RMSEA = rmsea, SRMR = srmr, ChiSq = chisq)
+  
+  # Create a flextable with the specified caption
+  fit_table <- fits_df %>%
+    mutate(pvalue = as.character(pvalue)) %>%
+    mutate(p = case_when(
+            pvalue == "0" ~ "<0.001",
+            TRUE ~ pvalue)) %>%
+    select(-pvalue) %>%
+    regulartable() %>%
+    fit_to_width(7) %>%
+    width(j = 4:9, width = 0.6) %>%
+    padding(padding.top = 2,
+            padding.bottom = 2,
+            padding.left = 2,
+            padding.right = 2,
+            part = "all") %>%
+    align(j = "p", align = "right", part = "all") %>%
+    set_caption(caption = caption)
+  
+  return(list(
+    fit_table = fit_table,
+    efa_fit = efa_fit
+  ))
+}
+
+```
+
+```{r EFAfit1, message = FALSE, echo = FALSE, results = 'asis'}
+
+# Run the function and save the outputs
+result1 <- efa_fits(
+  data = df_efa,
+  column_names = EFAnames2,
+  nfactors = 1:3,
+  caption = "Model fit criteria for EFA on 16-item list"
+)
+# result1$fit_table
+
+# Comparative fit indices (AIC and BIC) were smallest for the three factor model. 
+# Also, this model showed the lowest RMSEA (although higher than criterion of 0.08).
+
+# Inspect factor loadings of 3-factor model first
+mod1 <- result1$efa_fit$nf3
+
+```
+
+```{r EFAloadfunc, message = FALSE, echo = FALSE, results = 'asis'}
+
+# Create a function which displays the factor loadings neatly
+efa_loads <- function(model_object, labels_df) {
+  # Extract and format the factor loadings
+  efa_loadings <- parameterEstimates(model_object, standardized = TRUE) %>%
+    filter(op == "=~" & pvalue < 0.01) %>%  # Filter significant loadings
+    select(lhs, rhs, pvalue, std.all) %>%   # Select relevant columns
+    mutate(std.all = round(std.all, 2)) %>% # Round standardized loadings
+    mutate(std.all = ifelse(std.all < 0.3, ".", std.all)) %>% # Format small loadings
+    select(-pvalue) %>%                     # Remove p-value column
+    pivot_wider(names_from = "lhs", values_from = "std.all") %>% # Wide format
+    arrange(rhs) %>%                        # Sort by observed variable
+    rename(EFAnames = rhs)                  # Rename for joining
+  
+  efa_table_data <- left_join(labels_df, efa_loadings, by = "EFAnames")
+  
+  # Rename columns for output
+  colnames(efa_table_data) <- c("Item", "Label", paste0("f", 1:(ncol(efa_table_data) - 2)))
+  
+  # Create a flextable
+  efa_table <- efa_table_data %>%
+    regulartable() %>%
+    autofit() %>%
+    width(j = ~Label, width = 3)  # Adjust width of label column
+  
+  return(efa_table)
+}
+
+```
+
+```{r EFA3fac, message = FALSE, echo = FALSE, results = 'asis'}
+
+# Create the table which the function needs for the labels
+# This must be a df with two columns: EFAnames and EFAlabels
+EFAlabels_df2 <- filter(EFAlabels_df, EFAnames %in% EFAnames2)
+
+# mod1 is the model object
+loads1 <- efa_loads(
+  model_object = mod1,
+  labels_df = EFAlabels_df2
+)
+# loads1 #"Factor loadings for three factor EFA on 16-item list"
+
+```
+
+```{r EFAfit2, message = FALSE, echo = FALSE, results = 'asis'}
+# Remove two items with significant cross-loadings
+rm_fa <- c("HM07", "HM12")
+EFAnames3 <- subset(EFAnames2, !(EFAnames2 %in% rm_fa))
+
+# Run the function and save the outputs
+result2 <- efa_fits(
+  data = df_efa,
+  column_names = EFAnames3,
+  nfactors = 1:2,
+  caption = "Model fit criteria for EFA on 14-item list"
+)
+# result2$fit_table
+
+# While RMSEA increased for this model, other fit indices meet our criteria and it performs better than the one factor model. Therefore, inspect loadings for two factor model.
+mod2 <- result2$efa_fit$nf2
+ 
+```
+
+```{r EFAload2, message = FALSE, echo = FALSE, results = 'asis'}
+
+# Create the table which the function needs for the labels
+EFAlabels_df3 <- filter(EFAlabels_df2, EFAnames %in% EFAnames3)
+
+# mod2 is the model object
+loads2 <- efa_loads(
+  model_object = mod2,
+  labels_df = EFAlabels_df3
+)
+
+# Print the table: Factor loadings for two factor EFA on 14-item list
+# loads2
+# The two factor model may be more suitable as it has no significant cross-loadings. 
+# However, we removed item HM10 as its loading is <0.4.
+
+```
+
+```{r efaSex, message = FALSE, echo = FALSE}
+
+# EFAnamesSex <- c("HM02", "HM04", "HM05", "HM06", "HM09", "HM11", "HM13", "HM14", "HM15", "HM16", "HM17", "HM19", "HM20")
+# 
+# # Also check models by sex (but have commented out code for simplicity)
+# # Join sex data to df_efa
+# df_sex <- dplyr::select(scal, c("participant", "sex"))
+# df_efa <- left_join(df_efa, df_sex, by = "participant")
+# 
+# # Separate df_HM_e by sex
+# e_f <- df_efa %>% filter(sex == "Female")
+# e_m <- df_efa %>% filter(sex == "Male")
+# 
+# # Fit 2 factor EFA models
+# fit_F <- efa(data = e_f[EFAnamesSex], nfactors = 2) # , ordered = TRUE)
+#  summary(fit_F, standardized = "TRUE")
+# 
+# fit_M <- efa(data = e_m[EFAnamesSex], nfactors = 2) # , ordered = TRUE)
+#  summary(fit_M, standardized = "TRUE")
+
+# Female-only model shows cross-loadings for HMO4 and HM13, remove these items
+
+```
+
+```{r EFAfit3, message = FALSE, echo = FALSE, results = 'asis'}
+
+rm_fa2 <- c("HM04", "HM10", "HM13")
+EFAnames4 <- subset(EFAnames3, !(EFAnames3 %in% rm_fa2))
+
+# Run the EFA function and save the outputs
+result3 <- efa_fits(
+  data = df_efa,
+  column_names = EFAnames4,
+  nfactors = 1:2,
+  caption = "Model fit criteria for EFA on 11-item list"
+)
+# result3$fit_table
+
+# Two factor model still has best fit, so we continue to refine
+mod3 <- result3$efa_fit$nf2
+ 
+```
+
+```{r EFAload3, message = FALSE, echo = FALSE, results = 'asis'}
+
+# Create the table which the function needs for the labels
+EFAlabels_df4 <- filter(EFAlabels_df3, EFAnames %in% EFAnames4)
+
+# mod3 is the model object
+loads3 <- efa_loads(
+  model_object = mod3,
+  labels_df = EFAlabels_df4
+)
+# loads3 # Factor loadings for two factor EFA on 11-item list
+
+```
+
+```{r ICfacEFA, message = FALSE, echo = FALSE, results = 'asis'}
+### Internal consistency for two factors ###
+
+# Item lists per factor (two factor model)
+Fac1 <- c("HM02", "HM06", "HM09", "HM11", "HM15", "HM17", "HM20")
+Fac2 <- c("HM05", "HM14", "HM16", "HM19")
+
+# Internal Consistency: cronbach's alpha for each factor
+ca1 <- cronbach.alpha(df_efa[Fac1], CI=TRUE) # 0.93
+ca2 <- cronbach.alpha(df_efa[Fac2], CI=TRUE) # 0.81
+# The internal consistency of both factors is good: cronbach's alpha >0.8. 
+# For factor 1 the value of 0.93 is very high and suggests redundancy.
+
+ca_al <- c(ca1$alpha, ca2$alpha) # alpha values
+ca_al <- round(as.numeric(ca_al), 3)
+
+ca_lCI <- c(ca1$ci[1], ca2$ci[1]) # low CI values
+ca_lCI <- round(as.numeric(ca_lCI), 3)
+
+ca_uCI <- c(ca1$ci[2], ca2$ci[2]) # upper CI values
+ca_uCI <- round(as.numeric(ca_uCI), 3)
+
+f_lab <- c("Factor 1", "Factor 2") # labels
+cas <- as.data.frame(cbind(f_lab, ca_al, ca_lCI, ca_uCI))
+names(cas) <- c("Factor", "Chronbach's alpa", "low CI", "up CI")
+
+```
+
+```{r CronbachCheck, message = FALSE,  echo = FALSE, results = 'hide'}
+# Therefore, for factor 1, we then tried to drop further items to make the questionnaire as concise as possible (while still retaining a Cronbach's alpha of ~0.8-0.9). 
+# We checked all possible combinations of four items (also tested five items but chose four for parsimony). 
+# From this list, selected the option with the items that we think are most important and which were mentioned in qualitative data from the participants. 
+# Therefore, the final items for factor 1 are `HM02`, `HM09`, `HM11`, `HM15` (Cronbach's alpha = 0.87). We did not attempt to reduce items further from factor 2 as this factor is only four items already and has a suitable Cronbach's alpha.
+
+# Generate all possible 4-item combinations from the list of 8 items
+combinations <- combn(Fac1, 4, simplify = FALSE)
+
+# Initialize a list to store results
+results <- data.frame(
+  Combination = character(),
+  Alpha = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Loop through each combination, calculate Cronbach's alpha, and store results
+for (comb in combinations) {
+  # Calculate alpha for the current combination
+  current_alpha <- alpha(df_efa[ , comb])$total$raw_alpha
+  
+  # Append results to the data frame
+  results <- rbind(results, data.frame(
+    Combination = paste(comb, collapse = ", "),
+    Alpha = current_alpha
+  ))
+}
+
+# Sort by alpha in ascending order
+sorted_results <- results[order(results$Alpha), ]
+# head(sorted_results, n =10) # print just combinations with the 10 lowest alphas (all are <0.85)
+
+# Update Factor 1 with chosen four items
+Fac1 <- c("HM02", "HM09", "HM11", "HM15")
+
+ca1_4 <- cronbach.alpha(df_efa[Fac1], CI=TRUE) # 0.85, CIs = 0.81, 0.88
+
+```
+
+```{r EFAfit4, message = FALSE, echo = FALSE, results = 'asis'}
+
+# Re-run the EFA on these 8 items to check the model fit and item loadings. 
+EFAnames5 <- c(Fac1, Fac2)
+
+# Run the efa function and save the outputs
+result4 <- efa_fits(
+  data = df_efa,
+  column_names = EFAnames5,
+  nfactors = 1:2,
+  caption = "Model fit criteria for EFA on 8-item list"
+)
+# result4$fit_table
+# We now see that all model fit measures meet our criteria.
+
+# Select the model of interest to print factor loadings
+mod4 <- result4$efa_fit$nf2
+
+```
+
+```{r EFAload4, message = FALSE, echo = FALSE, results = 'asis'}
+
+# Create the table which the function needs for the labels
+EFAlabels_df5 <- filter(EFAlabels_df4, EFAnames %in% EFAnames5)
+
+# mod4 is the model object
+loads4 <- efa_loads(
+  model_object = mod4,
+  labels_df = EFAlabels_df5
+)
+# loads4  # Factor loadings for two factor EFA on 8-item list
+# Note: HM05 factor loading was slightly lower than stated cut-off at 0.37 but we elected to keep this item due to the qualitative feedback often referencing low energy (see somatic symptoms factor for the CFA sample)
+
+```
+
+```{r EFAfinalchecks, message = FALSE, echo = FALSE}
+
+# Get sums for each factor and overall scale
+df_efa <- df_efa %>%
+  mutate(efaFac1tot = rowSums(across(all_of(Fac1)))) %>%
+  mutate(efaFac2tot = rowSums(across(all_of(Fac2)))) %>%
+  mutate(efaHMtot = rowSums(across(all_of(EFAnames5))))
+
+# Check Chronbach's alpha of unifactorial solution
+chron_alpha_2 <- cronbach.alpha(df_efa[EFAnames5], CI=TRUE)
+# chron_alpha_2 # 0.88 (CIs = 0.84, 0.9)
+
+# Check corr between factors
+efaFac_tots <- c("efaFac1tot", "efaFac2tot")
+Fcorr <- cor(df_efa[efaFac_tots], use = "complete.obs")
+Fcorr_p <- cor.mtest(df_efa[efaFac_tots], conf.level = 0.95)
+# The observed correlations between the two factors was 0.6 (p<0.001)
+
+```
+
+```{r ScaleCorrsEFA, message = FALSE, echo = FALSE, warning=FALSE}
+
+# Inspect the correlations with AEBQ, ARI, PHQ-8, GAD7
+
+# Create data frame with the HM data and other mental health questionnaire data
+efa_scal <- left_join(df_efa, scal, by = "participant")
+
+efa_scal <- select(efa_scal, "participant", "efaHMtot", "efaFac1tot", "efaFac2tot", "AEBQHtot", "ARItot", "PHQ8tot", "GADtot")
+
+efa_scal <- efa_scal %>%
+  group_by(participant) %>%
+  summarise(efaHMtot = mean(efaHMtot),
+            efaFac1tot = mean(efaFac1tot),
+            efaFac2tot = mean(efaFac2tot),
+            AEBQHtot = mean(AEBQHtot, na.rm = TRUE),
+            ARItot = mean(ARItot, na.rm = TRUE),
+            PHQ8tot = mean(PHQ8tot, na.rm = TRUE),
+            GADtot = mean(GADtot, na.rm = TRUE))
+
+# Correlation matrix for all scale totals (including the factor scales)
+efa_scal_corr <- cor(efa_scal[,-(c(1))], use = "complete.obs")
+efa_scal_corr_p <- cor.mtest(efa_scal[,-(c(1))], conf.level = 0.95)
+
+# Correlation matrix of hunger-induced mood change score and other measures
+CorrLabs <- c("HM total", "Factor 1", "Factor 2", "AEBQ hunger", "ARI", "PHQ8", "GAD")
+colnames(efa_scal_corr) <- CorrLabs
+rownames(efa_scal_corr) <- CorrLabs
+
+```
+
+```{r CFAprep, message = FALSE, echo = FALSE}
+
+### Step 2: Confirmatory Factor Analysis ###
+
+# List of 15 items + 1 impact item and collected responses from 160 participants (age 18-30; 50% female)
+# Item numbers are kept the same as the EFA for now for consistency
+# Some item wording updates for simplicity
+
+# Only CFA relevant columns and drop other rows (N = 160)
+df_cfa <- scal %>%
+  filter(sample == "2") %>%
+  dplyr::select((all_of(CFAnames) | ends_with("participant")))
+
+```
+
+```{r CorrMatItemsCFA, message = FALSE, echo = FALSE}
+
+# Correlation matrix for all items in questionnaire
+cfacorr <- df_cfa %>%
+  select(all_of(CFAnames)) %>%
+  cor_mat(method = "pearson") %>%
+  pull_triangle(triangle = "upper", diagonal = FALSE) %>% 
+  cor_mark_significant(.,
+  cutpoints = c(0, 0.001, 0.01, 0.05, 1),
+  symbols = c("***", "**", "*", ""))
+# No item correlations were \>0.80
+
+```
+
+```{r CFAfit, message = FALSE, echo = FALSE}
+### Confirmatory Factor Analysis Model Fitting ###
+# Model fit criteria are same as efa
+
+cfa_spec <- '
+  # factor specification for 3: irr, low, som
+    f1 =~ HM02 + HM09 + HM11 + HM15
+    f2 =~  HM14 + HM16 + HM19 + HM21
+    f3 =~  HM05 + HM22 + HM23 + HM24 + HM25 + HM26 + HM27
+'
+
+cfa <- lavaan::cfa(cfa_spec, data=df_cfa)
+# summary(cfa, fit.measures=TRUE, standardized=TRUE)
+
+# Then display the fit statistics for the three factor model
+CFAfits <- fitMeasures(cfa, c("aic", "bic", "cfi", "tli", "rmsea", "srmr", "chisq", "df", "pvalue"))
+
+CFAfits_df <- bind_rows(CFAfits, .id = "column_label")
+CFAfits_df <- CFAfits_df %>%
+  mutate(column_label = "3") %>% # manually assign N factors here are just one model
+  rename("n factors" = "column_label") %>%
+  mutate_at(c("aic", "bic", "chisq", "df", "pvalue", "cfi", "tli", "rmsea", "srmr"), as.numeric) %>%
+  mutate_if(is.numeric, round, 3) %>%
+  rename(AIC = aic, BIC = bic, CFI = cfi, TLI = tli, RMSEA = rmsea, SRMR = srmr, p = pvalue)
+
+# CFAfits_df
+
+# add_footer_lines ("Criteria: aic =  Akaike information criterion, bic = Bayesian information criterion, chisq = Chi squared, cfi = comparative fit index, rmsea = root mean square error of approximation, srmr = root mean square residual")
+
+```
+
+```{r ICfacCFA, message = FALSE, echo = FALSE, results = 'asis'}
+### Internal Consistency of Factors ###
+
+# Item lists per factor (three factor model)
+# Fac1 <- c("HM02", "HM09", "HM11", "HM15") # No change here
+Fac2 <- c("HM14", "HM16", "HM19", "HM21")
+Fac3 <- c("HM05", "HM22", "HM23", "HM24", "HM25", "HM26", "HM27")
+
+# Internal Consistency (Cronbach's alpha) for each factor
+ca1_cfa <- cronbach.alpha(df_cfa[Fac1], CI=TRUE) # 0.88
+ca2_cfa <- cronbach.alpha(df_cfa[Fac2], CI=TRUE) # 0.84
+ca3_cfa <- cronbach.alpha(df_cfa[Fac3], CI=TRUE) # 0.89
+
+# Test-retest reliability is in separate script
+
+```
+
+```{r CFACronbachCheck, message = FALSE,  echo = FALSE, results = 'hide'}
+
+# Drop further items from Factor 3 to make questionnaire as concise as possible # 
+# While still retaining good Cronbach's alpha of about 0.8 
+# Checked all combinations of four items (also tested five items but chose four for parsimony). 
+
+# Generate all possible 4-item combinations from the list of 8 items
+combinations <- combn(Fac3, 4, simplify = FALSE)
+
+# Initialize a list to store results
+results <- data.frame(
+  Combination = character(),
+  Alpha = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Loop through each combination, calculate Cronbach's alpha, and store results
+for (comb in combinations) {
+  # Calculate alpha for the current combination
+  current_alpha <- alpha(df_cfa[ , comb])$total$raw_alpha
+  
+  # Append results to the data frame
+  results <- rbind(results, data.frame(
+    Combination = paste(comb, collapse = ", "),
+    Alpha = current_alpha
+  ))
+}
+
+# Sort by alpha in ascending order
+sorted_results <- results[order(results$Alpha), ]
+# head(sorted_results, n =20) # print just combinations with the 10 lowest alphas (all are <0.81)
+# Select option based on items: HM22, HM23, HM24, HM25 (Cronbach's alpha = 0.8).
+
+# Update Factor 3 to reflect this
+Fac3 <- c("HM22", "HM23", "HM24", "HM25")
+
+# Check CIs
+# This is now updated
+ca3_cfa <- cronbach.alpha(df_cfa[Fac3], CI=TRUE) # 0.89
+
+# Update full list of items
+# Here we also name the factors as Irritability, Low Mood and Somatic
+CFAnames2 <- c(Fac1, Fac2, Fac3)
+CFAlabels2_df <- as.data.frame(CFAnames2)
+names(CFAlabels2_df) <- "CFAnames"
+CFAlabels2_df <- left_join(CFAlabels2_df, CFAlabels_df, by = "CFAnames")
+CFAlabels2_df$Factor <- (ifelse (CFAlabels2_df$CFAnames %in% Fac1, "Irritability", (ifelse (CFAlabels2_df$CFAnames %in% Fac2, "Low Mood", "Somatic"))))
+
+```
+
+```{r CFAFacCorrMat, message = FALSE, echo = FALSE}
+
+# Observed correlations of the factors were quite high (around 0.71-0.77), which is expected to some extent
+# but tried to reduce them to minimise redundancy
+
+# Check the observed correlations of the factors
+df_cfa <- df_cfa %>%
+  mutate(cfaFac1tot = rowSums(across(all_of(Fac1)))) %>%
+  mutate(cfaFac2tot = rowSums(across(all_of(Fac2)))) %>%
+  mutate(cfaFac3tot = rowSums(across(all_of(Fac3))))
+
+cfaFac_tots <- c("cfaFac1tot", "cfaFac2tot", "cfaFac3tot") # updated this for CFA
+
+# Correlation matrix for all items in HM questionnaire
+Fcorr_cfa <- cor(df_cfa[cfaFac_tots], use = "complete.obs")
+Fcorr_cfa_p <- cor.mtest(df_cfa[cfaFac_tots], conf.level = 0.95)
+# Fcorr_cfa
+
+```
+
+```{r CorrLeaveOut,  message = FALSE, echo = FALSE}
+# Due to the high correlations between factors we then checked whether leaving out one item at a time reduced the correlations and found that it did for item 22 (low energy). Therefore we have removed this item from the model.
+
+# Calculate the length (=12)
+len <- length(CFAnames2)
+
+# Initialise lists, Fact_ is for Factor temporary (for use in the loop below)
+Fact1 <- list()
+Fact2 <- list()
+Fact3 <- list()
+
+# Then loop through the list of items removing one at a time and re-testing cronbach's alpha
+for (i in 1:as.numeric(len)) {
+  new_df <- CFAlabels2_df[-i,]
+ # print(paste("Removing item", CFAlabels2_df$CFAnames[i]))
+  Fact1 <- new_df %>% filter(Factor == "Irritability") %>% select("CFAnames") %>% as.vector()
+  Fact2 <- new_df %>% filter(Factor == "Low Mood") %>% select("CFAnames") %>% as.vector()
+  Fact3 <- new_df %>% filter(Factor == "Somatic") %>% select("CFAnames") %>% as.vector()
+  
+  df_cfa_t <- df_cfa %>%
+  mutate(Fact1tot = rowSums(across(all_of(Fact1$CFAnames)))) %>%
+  mutate(Fact2tot = rowSums(across(all_of(Fact2$CFAnames)))) %>%
+  mutate(Fact3tot = rowSums(across(all_of(Fact3$CFAnames))))
+  
+  Facts <- c("Fact1tot", "Fact2tot", "Fact3tot")
+  
+  # Correlation matrix for all Factor totals
+  Facts_corr <- cor(df_cfa_t[Facts], use = "complete.obs")
+  # print(round(Facts_corr, 2))
+}
+
+# Without item 22
+Fac3 <- c("HM23", "HM24", "HM25")
+
+# Update item lists / df
+CFAnames3 <- c(Fac1, Fac2, Fac3)
+CFAlabels3_df <- CFAlabels2_df[!CFAlabels2_df$CFAnames == "HM22", ]
+
+#Check cronbach's alpha for full final questionnaire
+ca_cfa_fin <- cronbach.alpha(df_cfa[CFAnames3], CI=TRUE) # 0.93 CIs=0.91,0.94
+
+# Update sum scores for Factors and Overall Scales
+df_cfa <- df_cfa %>%
+  mutate(cfaFac1tot = rowSums(across(all_of(Fac1)))) %>%
+  mutate(cfaFac2tot = rowSums(across(all_of(Fac2)))) %>%
+  mutate(cfaFac3tot = rowSums(across(all_of(Fac3)))) %>%
+  mutate(cfaHMtot = rowSums(across(all_of(CFAnames3))))
+
+# Correlation matrix for all subscales in questionnaire
+Fcorr_cfa_2 <- cor(df_cfa[cfaFac_tots], use = "complete.obs")
+Fcorr_cfa_p_2 <- cor.mtest(df_cfa[cfaFac_tots], conf.level = 0.95)
+# Fcorr_cfa_2 # still fairly highly but acceptable given expected relationships and other good psychometrics
+
+```
+
+```{r CFAModelComp, message = FALSE, echo = FALSE}
+# Re-ran the confirmatory factor analysis on 11 items, to test model fit for the final model. 
+
+# Note: due to the way that lavaan fixes the first loading to 1, the first item in each factor is chosen by the one which "best represents" (subjectively) the factor
+# Three factors
+cfa_spec2 <- '
+  # factor specification for 3: irr, low, som
+    f1 =~ HM11 + HM02 + HM09 + HM15
+    f2 =~ HM16 + HM14 + HM19 + HM21
+    f3 =~ HM25 + HM23 + HM24
+'
+
+cfa2_3 <- lavaan::cfa(cfa_spec2, data=df_cfa) 
+# sensitivity analysis: use estimator = "MLM" due to some non-normal response dist but results are approximately the same
+# summary(cfa2_3, fit.measures=TRUE, standardized=TRUE)
+
+# Also compared it to a two factor model (combining low mood and somatic, as these have the highest corr) and a unifactor model.
+
+# Two factors
+cfa_spec2_2fac <- '
+  # factor specification for 1: irr, som + low
+    f1 =~ HM02 + HM09 + HM11 + HM15
+    f2 =~ HM14 + HM16 + HM19 + HM21 + HM23 + HM24 + HM25
+'
+
+cfa2_2 <- lavaan::cfa(cfa_spec2_2fac, data=df_cfa)
+# summary(cfa2_2, fit.measures=TRUE, standardized=TRUE)
+
+# One factor
+cfa_spec2_1fac <- '
+  # factor specification for 1
+    f1 =~ HM02 + HM09 + HM11 + HM15 + HM14 + HM16 + HM19 + HM21 + HM23 + HM24 + HM25
+'
+
+cfa2_1 <- lavaan::cfa(cfa_spec2_1fac, data=df_cfa)
+# summary(cfa2_1, fit.measures=TRUE, standardized=TRUE)
+
+# Then display the fit statistics for the one, two and three factor model
+nf_list <- c(cfa2_1, cfa2_2, cfa2_3)
+fits_list <- list()
+
+for (f in 1:length(nf_list)) {
+  fits <- fitMeasures(nf_list[[f]], c("aic", "bic", "cfi", "tli", "rmsea", "srmr", "chisq", "df", "pvalue"))
+  fits_list[[f]] <- fits
+}
+
+fits_df <- bind_rows(fits_list, .id = "column_label")
+fits_df <- fits_df %>%
+  rename("n_factors" = "column_label") %>%
+  mutate(across(c("aic", "bic", "cfi", "tli", "rmsea", "srmr", "chisq", "df"), round, 2)) %>%
+  mutate(pvalue = round(as.numeric(pvalue), 3))
+
+CFAfin <- fits_df %>% 
+  mutate(pvalue = as.character(pvalue)) %>%
+    mutate(p = case_when(
+            pvalue == "0" ~ "<0.001",
+            TRUE ~ pvalue)) %>%
+    select(-pvalue) %>%
+  regulartable() %>%
+  fit_to_width(7) %>%
+  width(j = 4:9, width = 0.6) %>%
+  padding(padding.top = 2,
+          padding.bottom = 2,
+          padding.left = 2,
+          padding.right = 2, 
+          part = "all") %>%
+  align(j = "p", align = "right", part = "all") %>%
+  set_caption(caption = "Model fit for one, two and three factor CFA on 11-item list")
+
+# lavaan::modificationIndices(cfa2_3, minimum.value = 5, sort.=TRUE, standardized = FALSE) 
+# This suggest some covs between observed vars could be estimated but don't want to do this as the theoretical basis is that this would be captured by the factors
+
+```
+
+```{r ChronAlphasTab, message = FALSE, echo = FALSE}
+
+# Total MEAL
+caMEAL <- cronbach.alpha(df_cfa[CFAnames3], CI=TRUE) # MEAL (not used)
+# Factor 1 = no change
+# Factor 2 = no change
+# Factor 3
+ca3_cfa <- cronbach.alpha(df_cfa[Fac3], CI=TRUE) # now three items for F3
+
+
+ca_al_cfa <- c(ca1_cfa$alpha, ca2_cfa$alpha, ca3_cfa$alpha) # alpha values
+ca_al_cfa <- round(as.numeric(ca_al_cfa), 3)
+
+ca_lCI_cfa <- c(ca1_cfa$ci[1], ca2_cfa$ci[1], ca3_cfa$ci[1]) # low CI values
+ca_lCI_cfa <- round(as.numeric(ca_lCI_cfa), 3)
+
+ca_uCI_cfa <- c(ca1_cfa$ci[2], ca2_cfa$ci[2], ca3_cfa$ci[2]) # up CI values
+ca_uCI_cfa <- round(as.numeric(ca_uCI_cfa), 3)
+
+f_lab_cfa <- c("Factor 1", "Factor 2", "Factor 3") # labels
+cas_cfa <- as.data.frame(cbind(f_lab_cfa, ca_al_cfa, ca_lCI_cfa, ca_uCI_cfa))
+names(cas_cfa) <- c("Factor", "Cronbach's alpha", "low CI", "up CI")
+
+```
+
+```{r AdultDesc, message = FALSE, echo = FALSE, warning=FALSE}
+
+fs <- c("MEAL" ,"F1", "F2", "F3")
+
+# Build a table of descriptive stats for MEAL
+desc <- scal %>%
+  filter(sample %in% c("2", "3")) %>%
+  rename("MEAL" = MEALtot, "F1" = Fac1tot, "F2" = Fac2tot, "F3" = Fac3tot) %>%
+  pivot_longer(cols = all_of(fs), 
+               names_to = "Factor", 
+               values_to = "Score") %>%
+  group_by(Factor) %>%
+  summarise(
+    Total = mean(Score, na.rm=TRUE),
+    Male = mean(Score[sex == "Male" & !is.na(sex)], na.rm=TRUE),
+    Female = mean(Score[sex == "Female" & !is.na(sex)], na.rm=TRUE),
+    TotalSD = sd(Score, na.rm=TRUE),
+    MaleSD = sd(Score[sex == "Male" & !is.na(sex)], na.rm=TRUE),
+    FemaleSD = sd(Score[sex == "Female" & !is.na(sex)], na.rm=TRUE)
+  ) %>% 
+  mutate_if(is.numeric, round, 1) %>% 
+  mutate(
+    Total = paste0(Total, " (", TotalSD, ")"),
+    Male = paste0(Male, " (", MaleSD, ")"),
+    Female = paste0(Female, " (", FemaleSD, ")") 
+  ) %>%
+  select(-TotalSD, -MaleSD, -FemaleSD) %>%
+  mutate(Factor = factor(Factor, levels = fs)) %>%
+  arrange(Factor)
+
+```
+
+```{r MEALdesc, message = FALSE, echo = FALSE, warning=FALSE}
+
+## Descriptive Stats on MEAL - all samples except 1
+
+mMEAL <- scal %>% filter(sample != "1") %>% 
+  summarise(mMEAL = mean(MEALtot, na.rm = TRUE)) %>%
+  pull(mMEAL) # mean MEAL score is 20.1
+
+sdMEAL <- scal %>% filter(sample != "1") %>% 
+  summarise(sdMEAL = sd(MEALtot, na.rm = TRUE)) %>%
+  pull(sdMEAL) # standard deviation of MEAL score is 10.8
+
+# together these suggest a normal but somewhat flat distribution
+
+# Distribution of MEAL score (raincloudMEAL)
+rMEAL <- scal %>% filter(sample != "1") %>% 
+  plot_raincloud(MEALtot) +
+  labs(y = "MEAL score") +
+  theme_classic()
+
+# Distribution of MEAL score by sex (sexMEAL)
+sexMEAL <- scal %>% filter(sample != "1") %>% 
+  filter(sex %in% c("Male", "Female")) %>% 
+  ggplot(aes(x=sex, y=MEALtot, color = sex)) +
+  geom_violin() +
+  geom_boxplot(width=0.1) +
+  labs(y = "MEAL score", x = "Sex") +
+  stat_summary(fun.y=mean, geom="point", size=2, color="black") + 
+  theme_classic() +
+  theme(legend.position="none")
+
+# how many people with no recorded sex (N=30)
+# nrow(scal) - nrow(scal %>% filter(sex %in% c("Male", "Female")))
+
+# t test of MEAL by sex
+sexMEAL_t <- scal %>% filter(sample != "1") %>%
+  filter(sex %in% c("Male", "Female")) %>% 
+  t.test(MEALtot ~ sex, data = ., na.rm = TRUE)
+
+# distributions of each factor score (fsMEAL)
+fsMEAL <- scal %>% filter(sample != "1") %>%
+  filter(sample != "1") %>%
+  rename("F1" = Fac1tot, "F2" = Fac2tot, "F3" = Fac3tot) %>%
+  pivot_longer(cols = c("F1", "F2", "F3"), 
+               names_to = "Factor", 
+               values_to = "Score") %>%
+  plot_raincloud(Score, groups = Factor) +
+  labs(y = "Factor score", x = "Factor")+
+  theme_classic()
+
+# For the below using data from samples 2, 3, 4, 5
+
+# Visualise age relationship with MEAL
+# Shows trend of higher scores at younger age: highlighting importance of adolescent investigation too
+jitter <- position_jitter(width = 0.1, height = 0.1)
+ageMEAL <- scal %>%
+  filter(sample != "1") %>% 
+  ggplot(aes(x = age_yr, y = MEALtot)) +
+  geom_point(position = jitter) +
+  geom_smooth(method = "lm", se = TRUE)
+
+# Age analysis. Does age explain variation in MEAL?
+age_lm_all <- scal %>% filter(sample != "1") %>%
+  lm(MEALtot ~ age_yr, data = .)
+# summary(age_lm_all)
+
+age_sex_MEAL <- scal %>%
+  filter(sample != "1") %>% 
+  filter(sex %in% c("Male", "Female")) %>% 
+  ggplot(aes(x = age_yr, y = MEALtot, color = sex)) +
+  geom_point(position = jitter) +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(x = "Age (years)", y = "MEAL score", color = "Sex") +
+  theme_classic() +
+  theme(legend.position="none")
+
+age_sex_lm <- scal %>% filter(sample != "1") %>%
+  filter(sex %in% c("Male", "Female")) %>% 
+  lm(MEALtot ~ age_yr + sex, data = .)
+# summary(age_sex_lm)
+
+age_samp_MEAL <- scal %>%
+  filter(sample != "1") %>%
+  filter(sex %in% c("Male", "Female")) %>% 
+  ggplot(aes(x = age_yr, y = MEALtot, color = sex)) +
+  geom_point(position = jitter) +
+  geom_smooth(method = "lm", se = TRUE) +
+  facet_wrap(~group, scales = "free_x") +
+  labs(x = "Age (years)", y = "MEAL score") +
+  theme(legend.position="none") + 
+  theme_classic()
+
+
+bmi_lm <- scal %>% filter(sample %in% c("2","3","6")) %>%
+  filter(!is.na(bmi)) %>% 
+  lm(MEALtot ~ bmi + age_yr + sex, data = .)
+# summary(bmi_lm)
+
+# Correlation of hunger VAS and hunger mood questionnaire (irr Factor)
+st_tr_cor <- cor.test(scal$h_rating, scal$Fac1tot, method = c("pearson"), use = "complete.obs") # 0.18
+# The correlation between the current hunger rating and the total score on the hunger scale is low (0.17), suggesting these are two dissociable constructs, as expected.
+
+rHunger <- scal %>% # all samples
+  plot_raincloud(h_rating) +
+  labs(y = "State Hunger") +
+  theme_classic()
+
+# Median split
+h_med <- median(scal$h_rating, na.rm = TRUE)
+scal$h_bi <- ifelse(scal$h_rating < as.numeric(h_med), "0", "1")
+
+```
+
+```{r Imp, message = FALSE, echo = FALSE}
+### Impact Items ###
+
+# We also present the scores for the impact questions. For the 160 (sample 2) + 84 (sample 3) respondents, we see that a substantial portion say they their hunger-related mood changes can affect the relationships (with Family, Friends of Partner), their work, or their hobbies.
+
+ImpVars <- c("ImpFam", "ImpFrPa", "ImpSchWo", "ImpHobInt")
+
+# Only Imp columns and drop other rows (N = 244)
+df_imp <- scal %>%
+  filter(sample %in% c("2","3")) %>%
+  dplyr::select(all_of(ImpVars), participant) %>%
+  drop_na(ImpFam)
+
+# Make a table of response frequencies
+df_imp_long <- df_imp %>% 
+  pivot_longer(all_of(ImpVars)) %>% # make long form
+  drop_na(value) %>% # drop the NAs
+  mutate(item = as.character(name)) %>% 
+  count(item, value) %>%
+  mutate(per = round(n/nrow(df_imp)*100, 1)) # calc % response frequencies
+
+imp_tab <- df_imp_long %>% # use this for the table in the paper
+  pivot_wider(names_from = value, values_from = c("n", "per"))
+
+# Now repeat for adolescents
+
+# Only Imp columns and drop other rows 
+df_imp_ad <- scal %>%
+  filter(sample %in% c("4","5")) %>%
+  dplyr::select(all_of(ImpVars), participant)
+
+# Make a table of response frequencies
+df_imp_long_ad <- df_imp_ad %>% 
+  pivot_longer(all_of(ImpVars)) %>% # make long form
+  drop_na(value) %>% # drop the NAs
+  mutate(item = as.character(name)) %>% 
+  count(item, value) %>%
+  mutate(per = round(n/nrow(df_imp_ad)*100, 1)) # calc % response frequencies
+
+imp_tab_ad <- df_imp_long_ad %>% # use this for the table in the paper
+  pivot_wider(names_from = value, values_from = c("n", "per"))
+
+# And repeat for enriched sample
+
+# Only Imp columns and drop other rows 
+df_imp_en <- scal %>%
+  filter(sample == "6") %>%
+  dplyr::select(all_of(ImpVars), participant)
+
+# Make a table of response frequencies
+df_imp_long_en <- df_imp_en %>% 
+  pivot_longer(all_of(ImpVars)) %>% # make long form
+  drop_na(value) %>% # drop the NAs
+  mutate(item = as.character(name)) %>% 
+  count(item, value) %>%
+  mutate(per = round(n/nrow(df_imp_ad)*100, 1)) # calc % response frequencies
+
+imp_tab_en <- df_imp_long_en %>% # use this for the table in the paper
+  pivot_wider(names_from = value, values_from = c("n", "per"))
+
+```
+
+```{r ImpactAssoc, message = FALSE, echo = FALSE}
+
+# Raincloud for MEAL score by impact (switch to diff impacts vars)
+# scal %>%
+#   filter(sample != "1") %>%
+#   plot_raincloud(MEALtot, groups=as.character(ImpFam))
+
+imp_me <- scal %>%
+  filter(sample != "1") %>%
+  pivot_longer(all_of(ImpVars)) %>% # make long form
+  drop_na(value) %>%
+  select(name, value, MEALtot) %>%
+  group_by(name, value) %>%
+  summarise(
+    Mean = round(mean(MEALtot, na.rm = TRUE),2),
+    SD = round(sd(MEALtot, na.rm = TRUE), 2)) %>% 
+  mutate(
+    MeanSD = paste0(Mean, " (", SD, ")")
+  ) %>%
+  select(-c("Mean","SD")) %>%
+  pivot_wider(names_from = name, values_from = MeanSD)
+
+
+## perform anovas on MEAL ~ Impact for each imp
+imp_anovas <- apply(scal[,c(ImpVars)], 2, function(x) aov(MEALtot ~ as.factor(x), data = scal))
+
+# Apply Scheffe's test to the results of each ANOVA test
+# Sequential levels comparison only
+imp_scheffe <- apply(scal[,c(ImpVars)], 2, function(x) PostHocTest(aov(MEALtot ~ as.factor(x), data = scal), method = "scheffe"))
+
+# Convert the results of each ANOVA test into a tidy df
+imp_anovas_tab <- do.call(rbind, lapply(imp_anovas, broom::tidy))
+
+# Convert the results of the Scheffes into a single data frame
+scheffe_tab <- do.call(rbind, lapply(names(imp_scheffe), function(var_name) {
+  test_result <- imp_scheffe[[var_name]]
+  scheffe_results <- test_result$`as.factor(x)` # this is the "sub"element name
+  
+  df <- as.data.frame(scheffe_results)
+  df$variable <- var_name
+  df$comparison <- rownames(scheffe_results)
+  return(df)
+}))
+
+```
+
+```{r CFAadoMod, message = FALSE, echo = FALSE}
+
+# CFA for adolescents
+
+# Three factors: cfa_spec2 
+cfa_ad <- scal %>% filter(sample %in% c("4","5")) %>% 
+  lavaan::cfa(cfa_spec2, data=., missing = "ML")
+# Note: some missing data in adolescents so use FIML
+# summary(cfa_ad, fit.measures=TRUE, standardized=TRUE)
+
+cfa_loadings_ad <- parameterEstimates(cfa_ad, standardized = TRUE) %>%
+    filter(op == "=~") %>%  # Filter to only loadings
+    select(lhs, rhs, pvalue, std.all) %>%   # Select relevant columns
+    mutate(std.all = round(std.all, 2)) %>% # Round standardized loadings
+    mutate(std.all = ifelse(std.all < 0.3, ".", std.all)) %>% # Format small loadings
+    select(-pvalue, -lhs) %>%    # Remove p-value column 
+    rename(CFAnames = rhs, Est = std.all)      # Rename for joining
+
+CFAlabels_ad <- left_join(CFAlabels3_df, cfa_loadings_ad)
+
+# Format items df
+Tab_ad <- CFAlabels_ad %>%
+  mutate(CFAnames = 01:11)
+Tab_ad$CFAnames <- paste0('I', Tab_ad$CFAnames)
+
+# Create Chronbach's alphas
+caF1_ad <- cronbach.alpha(scal_ad[Fac1], CI=TRUE, na.rm = TRUE)
+caF2_ad <- cronbach.alpha(scal_ad[Fac2], CI=TRUE, na.rm = TRUE)
+caF3_ad <- cronbach.alpha(scal_ad[Fac3], CI=TRUE, na.rm = TRUE)
+
+ca_al_ad <- c(caF1_ad$alpha, caF2_ad$alpha, caF3_ad$alpha) # alpha values
+ca_al_ad <- round(as.numeric(ca_al_ad), 3)
+
+ca_lCI_ad <- c(caF1_ad$ci[1], caF2_ad$ci[1], caF3_ad$ci[1]) # low CI values
+ca_lCI_ad <- round(as.numeric(ca_lCI_ad), 3)
+
+ca_uCI_ad <- c(caF1_ad$ci[2], caF2_ad$ci[2], caF3_ad$ci[2]) # up CI values
+ca_uCI_ad <- round(as.numeric(ca_uCI_ad), 3)
+
+cas_ad <- as.data.frame(cbind(f_lab_cfa, ca_al_ad, ca_lCI_ad, ca_uCI_ad))
+names(cas_ad) <- c("Factor", "Cronbach's alpha", "low CI", "up CI")
+
+# Create table of alphas
+
+alphatab_ad <- cas_ad %>%
+  mutate_at(c(2:4), as.numeric) %>%
+  mutate_if(is.numeric, round, 2) %>%
+  mutate(alpha = paste0(`Cronbach's alpha`, " (", `low CI`, ", ", `up CI`, ")")) %>%
+  select(Factor, alpha)
+
+Factor <- c("Irritability", "Low Mood", "Somatic")
+alphatab_ad$Factor <- Factor
+
+Tab_ad <- left_join(Tab_ad, alphatab_ad, by = "Factor")
+Tab_ad <- Tab_ad[,c(1,2,4,3,5)]# rearrange columns
+
+```
+
+```{r AdoDesc, message = FALSE, echo = FALSE}
+
+# Ado Descriptives
+desc_ad <- scal %>% filter(sample %in% c("4","5")) %>%
+  rename("MEAL" = MEALtot, "F1" = Fac1tot, "F2" = Fac2tot, "F3" = Fac3tot) %>%
+  pivot_longer(cols = all_of(fs), 
+               names_to = "Factor", 
+               values_to = "Score") %>%
+  group_by(Factor) %>%
+  summarise(
+    Total = mean(Score, na.rm = TRUE), 
+    Male = mean(Score[sex == "Male" & !is.na(sex)], na.rm = TRUE),
+    Female = mean(Score[sex == "Female" & !is.na(sex)], na.rm = TRUE),
+    TotalSD = sd(Score, na.rm=TRUE),
+    MaleSD = sd(Score[sex == "Male" & !is.na(sex)], na.rm=TRUE),
+    FemaleSD = sd(Score[sex == "Female" & !is.na(sex)], na.rm=TRUE)
+  ) %>% 
+  mutate_if(is.numeric, round, 1) %>% 
+  mutate(
+    Total = paste0(Total, " (", TotalSD, ")"),
+    Male = paste0(Male, " (", MaleSD, ")"),
+    Female = paste0(Female, " (", FemaleSD, ")") 
+  ) %>%
+  select(-TotalSD, -MaleSD, -FemaleSD) %>%
+  mutate(Factor = factor(Factor, levels = fs)) %>%
+  arrange(Factor)
+
+```
+
+```{r Corrs, echo=FALSE, message = FALSE, results = "as-is"}
+### Correlations with other constructs ###
+
+# AEBQ corr: convergent validity
+aebqh_cor <- scal %>% filter(sample %in% c("2","3")) %>%
+  select(MEALtot, AEBQHtot) %>% 
+  as.matrix() %>%
+  rcorr(type = "spearman")
+
+# MH corrs
+corvars <- c("MEALtot", "Fac1tot", "Fac2tot", "Fac3tot", "ARItot", "PHQ8tot", "GADtot")
+corlookup <- c("MEAL", "F1", "F2", "F3", "ARI", "PHQ-8", "GAD-7")
+
+# Use sample 2 and 3 together for adults (N = 244)
+cortab <- scal %>% filter(sample %in% c("2","3")) %>%
+  select(all_of(corvars)) %>%
+  rename(setNames(corvars, corlookup)) %>%
+  cor_mat(method = "pearson") %>%
+  pull_triangle(triangle = "upper", diagonal = FALSE) %>% 
+  cor_mark_significant(.,
+  cutpoints = c(0, 0.001, 0.01, 0.05, 1),
+  symbols = c("***", "**", "*", "")) %>%
+  rename("Factor" = rowname) %>% 
+  select("Factor", "ARI", "PHQ-8", "GAD-7") %>%
+  filter(Factor %in% fs)
+
+# Ado Corrs
+cortab_ad <- scal %>% filter(sample %in% c("4","5")) %>%
+  select(all_of(corvars)) %>%
+  rename(setNames(corvars, corlookup)) %>%
+  cor_mat(method = "pearson") %>%
+  pull_triangle(triangle = "upper", diagonal = FALSE) %>% 
+  cor_mark_significant(.,
+  cutpoints = c(0, 0.001, 0.01, 0.05, 1),
+  symbols = c("***", "**", "*", "")) %>%
+  rename("Factor" = rowname) %>% 
+  select("Factor", "ARI", "PHQ-8", "GAD-7") %>%
+  filter(Factor %in% fs)
+
+# plot(jitter(scal_ad$ARItot, 1), jitter(scal_ad$MEALtot, 1))
+
+## Check cors with lm - all coeffs of interest signif
+# summary(
+#   scal %>% filter(sample %in% c("2","3","5")) %>%
+#   filter(sex %in% c("Male", "Female")) %>% 
+#   lm(MEALtot ~ ARItot + age_yr + sex, data = .))
+# 
+# summary(
+#   scal %>% filter(sample %in% c("2","3","4","5")) %>%
+#   filter(sex %in% c("Male", "Female")) %>% 
+#   lm(MEALtot ~ PHQ8tot + age_yr + sex, data = .))
+# 
+# summary(
+#   scal %>% filter(sample %in% c("2","3","4","5")) %>%
+#   filter(sex %in% c("Male", "Female")) %>% 
+#   lm(MEALtot ~ GADtot + age_yr + sex, data = .))
+
+```
+
+```{r CFAenMod, message = FALSE, echo = FALSE}
+
+# CFA for enriched sample
+
+# Three factors: cfa_spec2 
+cfa_en <- scal %>% filter(sample == "6") %>% 
+  lavaan::cfa(cfa_spec2, data=.)
+# summary(cfa_en, fit.measures=TRUE, standardized=TRUE)
+
+cfa_loadings_en <- parameterEstimates(cfa_en, standardized = TRUE) %>%
+    filter(op == "=~") %>%  # Filter to only loadings
+    select(lhs, rhs, pvalue, std.all) %>%   # Select relevant columns
+    mutate(std.all = round(std.all, 2)) %>% # Round standardized loadings
+    mutate(std.all = ifelse(std.all < 0.3, ".", std.all)) %>% # Format small loadings
+    select(-pvalue, -lhs) %>%    # Remove p-value column 
+    rename(CFAnames = rhs, Est = std.all)      # Rename for joining
+
+CFAlabels_en <- left_join(CFAlabels3_df, cfa_loadings_en)
+
+# Format items df
+Tab_en <- CFAlabels_en %>%
+  mutate(CFAnames = 01:11)
+Tab_en$CFAnames <- paste0('I', Tab_en$CFAnames)
+
+# Create Chronbach's alphas
+caF1_en <- cronbach.alpha(scal_en[Fac1], CI=TRUE, na.rm = TRUE)
+caF2_en <- cronbach.alpha(scal_en[Fac2], CI=TRUE, na.rm = TRUE)
+caF3_en <- cronbach.alpha(scal_en[Fac3], CI=TRUE, na.rm = TRUE)
+
+ca_al_en <- c(caF1_en$alpha, caF2_en$alpha, caF3_en$alpha) # alpha values
+ca_al_en <- round(as.numeric(ca_al_en), 3)
+
+ca_lCI_en <- c(caF1_en$ci[1], caF2_en$ci[1], caF3_en$ci[1]) # low CI values
+ca_lCI_en <- round(as.numeric(ca_lCI_en), 3)
+
+ca_uCI_en <- c(caF1_en$ci[2], caF2_en$ci[2], caF3_en$ci[2]) # up CI values
+ca_uCI_en <- round(as.numeric(ca_uCI_en), 3)
+
+cas_en <- as.data.frame(cbind(f_lab_cfa, ca_al_en, ca_lCI_en, ca_uCI_en))
+names(cas_en) <- c("Factor", "Cronbach's alpha", "low CI", "up CI")
+
+# Create table of alphas
+
+alphatab_en <- cas_en %>%
+  mutate_at(c(2:4), as.numeric) %>%
+  mutate_if(is.numeric, round, 2) %>%
+  mutate(alpha = paste0(`Cronbach's alpha`, " (", `low CI`, ", ", `up CI`, ")")) %>%
+  select(Factor, alpha)
+
+Factor <- c("Irritability", "Low Mood", "Somatic")
+alphatab_en$Factor <- Factor
+
+Tab_en <- left_join(Tab_en, alphatab_en, by = "Factor")
+Tab_en <- Tab_en[,c(1,2,4,3,5)]# rearrange columns
+
+```
+
+```{r MeasInv, message = FALSE, echo = FALSE}
+
+# A function for testing MI
+
+mifunc <- function(model_spec, data, group) {
+  # configural invariance
+cfa_mi1 <- cfa(model_spec, data = data, group = group)
+# weak invariance (metric)
+cfa_mi2 <- cfa(model_spec, data = data, group = group,
+               group.equal = "loadings")
+# strong invariance (scalar)
+cfa_mi3 <- cfa(model_spec, data = data, group = group,
+               group.equal = c( "loadings", "intercepts"))
+# strict invariance (residual)
+cfa_mi4 <- cfa(model_spec, data = data, group = group,
+               group.equal = c( "loadings", "intercepts", "residuals"))
+
+# put results into matrix for comparison
+mi.results<-matrix(NA, nrow = 4, ncol = 6)
+mi.results[1,] <- round(data.matrix(fitmeasures(cfa_mi1, fit.measures = c("chisq", "df","pvalue","cfi","rmsea","srmr"))), digits=3)
+mi.results[2,] <- round(data.matrix(fitmeasures(cfa_mi2, fit.measures = c("chisq", "df","pvalue","cfi","rmsea","srmr"))), digits=3)
+mi.results[3,] <- round(data.matrix(fitmeasures(cfa_mi3, fit.measures = c("chisq", "df","pvalue","cfi","rmsea","srmr"))), digits=3)
+mi.results[4,] <- round(data.matrix(fitmeasures(cfa_mi4, fit.measures = c("chisq", "df","pvalue","cfi","rmsea","srmr"))), digits=3)
+
+mi.comp <- matrix(NA, nrow = 3, ncol = 3)
+mi.comp[1,] <-  mi.results[2,4:6] - mi.results[1,4:6]
+mi.comp[2,] <-  mi.results[3,4:6] - mi.results[2,4:6]
+mi.comp[3,] <-  mi.results[4,4:6] - mi.results[3,4:6]
+mi.comp <- as.data.frame(mi.comp)
+colnames(mi.comp) <- c("cfi","rmsea","srmr")
+rownames(mi.comp) <- c("metric - config", "scalar - metric", "metric - residual")
+
+return(mi.comp)
+}
+
+# New variable for MI for both sets of tests 
+# for enriched data: any ED (including co-occurance), GLAD only panel
+# Sample sizes are: AD:249, ED: 88
+scal <- scal %>%
+  mutate(mi_group = case_when(
+    panel == "EDGI UK" ~ "ED",
+    panel == "EDGI UK,GLAD" ~ "ED",
+    panel == "GLAD" ~ "AD",
+    sample == "4" ~ "Adolescent",
+    sample == "5" ~ "Adolescent",
+    TRUE ~ "Community Adult"))
+
+# Test MI between community adults and ado
+mi_comp_ad <- scal %>% 
+  filter(sample %in% c("2","3","4","5")) %>%
+  mifunc(cfa_spec2, ., "mi_group")
+# Invariance at all three levels
+
+# Test MI between community adults and enriched
+mi_comp_en <- scal %>% 
+  filter(sample %in% c("2","3","6")) %>%
+  mifunc(cfa_spec2, ., "mi_group")
+# Again, invariance at all three levels
+
+```
+
+```{r EnDesc, message = FALSE, echo = FALSE}
+
+# Enriched Sample Descriptives
+desc_en <- scal %>% filter(sample == "6") %>%
+  rename("MEAL" = MEALtot, "F1" = Fac1tot, "F2" = Fac2tot, "F3" = Fac3tot) %>%
+  pivot_longer(cols = all_of(fs), 
+               names_to = "Factor", 
+               values_to = "Score") %>%
+  group_by(Factor) %>%
+  summarise(
+    Total = mean(Score, na.rm = TRUE), 
+    Male = mean(Score[sex == "Male" & !is.na(sex)], na.rm = TRUE),
+    Female = mean(Score[sex == "Female" & !is.na(sex)], na.rm = TRUE),
+    TotalSD = sd(Score, na.rm=TRUE),
+    MaleSD = sd(Score[sex == "Male" & !is.na(sex)], na.rm=TRUE),
+    FemaleSD = sd(Score[sex == "Female" & !is.na(sex)], na.rm=TRUE)
+  ) %>% 
+  mutate_if(is.numeric, round, 1) %>% 
+  mutate(
+    Total = paste0(Total, " (", TotalSD, ")"),
+    Male = paste0(Male, " (", MaleSD, ")"),
+    Female = paste0(Female, " (", FemaleSD, ")") 
+  ) %>%
+  select(-TotalSD, -MaleSD, -FemaleSD) %>%
+  mutate(Factor = factor(Factor, levels = fs)) %>%
+  arrange(Factor)
+
+# Test for MEAL regressed on group
+# Mean diffs between samples (Prolific and KCL) non-sig
+sample_lm <- scal %>% 
+  filter(sample %in% c("2","3","6")) %>%
+  mutate(mi_group = as.factor(mi_group)) %>%
+  lm(MEALtot ~ relevel(mi_group, ref = "Community Adult") + sex + age_yr, data = .)
+# summary(sample_lm)
+
+```
+
+```{r Qual, message = FALSE, echo = FALSE}
+
+qual <- read_csv("Qual_Final_MC.csv") # qual feedback
+
+qual_tab <- qual %>%
+  group_by(sample) %>%
+  dplyr::summarize(
+    Mood = paste0(sum(mood_all, na.rm = TRUE), " (", round((sum(mood_all, na.rm = TRUE)/n())*100), ")"),
+    Impact = paste0(sum(impact_all, na.rm = TRUE), " (", round((sum(impact_all, na.rm = TRUE)/n())*100), ")"),
+    Somatic = paste0(sum(somatic, na.rm = TRUE), " (", round((sum(somatic, na.rm = TRUE)/n())*100), ")")
+  )
+
+```
+
+```{r MenstCycle, message = FALSE, echo = FALSE, results = "as-is"}
+
+# Samples 2 and 3 only - menstrual cycle analysis
+
+# Prep data
+peridat <- scal %>%
+  select(participant, age_yr, sex, sample, date,
+         per_day, per_mon, per_yr,
+         per_reg,
+         fati_b, fati_d, fati_n,
+         dep_b, dep_d, dep_n,
+         anx_b, anx_d, anx_n,
+         irr_b, irr_d, irr_n,
+         app_b, app_d, app_n,
+         cra_b, cra_d, cra_n,
+         other_b, other_d, other_n,
+         contra,
+         h_rating, h_bi, MEALtot, Fac1tot, Fac2tot, Fac3tot) %>%
+  filter(sample %in% c("2", "3")) %>%
+  filter(sex == "Female") %>%
+  filter(per_reg != 5) # filter out ps who report no periods
+
+#new binary irregular period variable (1 = irregular)
+peridat <- peridat %>%
+  mutate(per_irreg = ifelse(per_reg %in% c(1, 2, 3), "0", "1"))
+
+#new binary contraceptive variable (1 = uses hormonal contra)
+peridat <- peridat %>%
+  mutate(contra_bi = ifelse(contra == 6, "0", "1"))
+
+# combine symptoms for before and during
+peridat <- peridat %>%
+  mutate(fati_symp = case_when(
+    fati_b == 1 ~ 1,
+    fati_d == 1 ~ 1,
+    .default = 0
+  )) %>%
+  mutate(dep_symp = case_when(
+    dep_b == 1 ~ 1,
+    dep_d == 1 ~ 1,
+    .default = 0
+  )) %>%
+  mutate(anx_symp = case_when(
+    anx_b == 1 ~ 1,
+    anx_d == 1 ~ 1,
+    .default = 0
+  )) %>%
+  mutate(irr_symp = case_when(
+    irr_b == 1 ~ 1,
+    irr_d == 1 ~ 1,
+    .default = 0
+  )) %>%
+  mutate(app_symp = case_when(
+    app_b == 1 ~ 1,
+    app_d == 1 ~ 1,
+    .default = 0
+  )) %>%
+  mutate(cra_symp = case_when(
+    cra_b == 1 ~ 1,
+    cra_d == 1 ~ 1,
+    .default = 0
+  )) %>%
+  mutate(other_symp = case_when(
+    other_b == 1 ~ 1,
+    other_d == 1 ~ 1,
+    .default = 0
+  )) 
+
+# new variable summing up all symptoms
+peridat <- peridat %>%
+  mutate(per_sym_sum = rowSums(across(c(
+    fati_symp, dep_symp, anx_symp, irr_symp, app_symp, cra_symp, other_symp)), na.rm = TRUE))
+
+
+# t-test for MEAL scores between reg and irreg
+per_irreg_t <- t.test(MEALtot ~ per_irreg, var.equal=TRUE, data = peridat)
+
+# t-test for MEAL scores between reg and irreg
+per_contra_t <- t.test(MEALtot ~ contra_bi, var.equal=TRUE, data = peridat)
+
+# linear model for period symptom sums
+per_sym_lm <- lm(MEALtot ~ per_sym_sum, data = peridat)
+
+# t-test for appetite change
+per_sym_app_t <- t.test(MEALtot ~ app_symp, var.equal=TRUE, data = peridat)
+
+```
+
+```{r MDoT_prep, message = FALSE, echo = FALSE}
+### Mood Drift Over Time (MDoT) ###
+
+# Here use data from all three Prolific samples + sample 4 ado
+# Therefore, instead of total MEAL score we have MEAL irritability score
+# N = 440 adults with complete task data (6 people did not have this)
+
+# Remove outliers leaving N=400 for analysis
+# Remove outliers, based on time taken on the task
+time_check <- mood_pr %>%
+  nest_by(participant) %>%
+  mutate(max = max(data$t_s)) %>% select(participant, max)
+
+# remove participants with max time over Q3 + 1.5*IQR or below Q1 - 1.5*IQR
+mood_pr <- mood_pr %>%
+  group_by(participant) %>%
+  mutate(max = max(t_s)) %>%
+  ungroup() %>%
+  mutate(IQR = IQR(max),
+         Out_upper = quantile(max, probs=c(.75), na.rm = FALSE)+1.5*IQR,
+         Out_lower = quantile(max, probs=c(.25), na.rm = FALSE)-1.5*IQR)
+
+# Identify participants who are outliers
+outlier_participants <- mood_pr %>%
+  filter(max > Out_upper | max < Out_lower) %>%
+  select(participant) %>%
+  distinct()
+
+mood_pr_all <- mood_pr # create backup df with outliers retained
+
+# Remove outlier participants from the dataset
+mood_pr <- mood_pr %>%
+  filter(!participant %in% outlier_participants$participant)
+# check
+# n_distinct(mood_pr$participant)
+# n_distinct(mood_pr_all$participant) # 40 participants removed
+
+# For analysis use adult plus ado data (N = 126 adolescents)
+# Therefore total N for task data is 400 + 126 = 526
+# bind adult (pr) and adolescent (ado) mood data
+mood <- bind_rows(mood_pr, mood_ad)
+
+```
+
+```{r MergeMoodScal, message = FALSE, echo = FALSE}
+
+# select the variable to add to the mood data (for use in LMEs)
+keyvars <- c("participant", "h_rating", "h_bi", "Fac1tot", "ARItot", "PHQ8tot", "GADtot", "sample")
+
+# duplicate existing mood data (for sensitivity analysis)
+mood_du <- mood
+
+# Add the scales to the mood data frame
+mood <- inner_join(mood, scal[keyvars], by = "participant")
+
+```
+
+```{r MDoT_vis, message = FALSE, echo = FALSE}
+
+# Calculating mean and standard error across whole task
+# for all orders together
+data_summary <- mood %>%
+  group_by(Emo, trial) %>% 
+  reframe(
+    csum_t = csum_t,
+    t_s = t_s,
+    mean = mean(Response),
+    SE = sd(Response) / sqrt(n())
+  )
+
+# Create a list of each emotion
+emotions <- c("happy", "bored", "frustrated")
+
+```
+
+```{r MDoT_lme, message = FALSE, echo = FALSE}
+### Linear Mixed Effect (LME) models ###
+
+# All models were run separately for happiness, frustration and boredom.
+
+# Defining model strings for analysis
+lme_model_strings <- list(
+  lmeString1 = 'Response ~ 1 + (1 + t_m | participant)', # Trial and participant random effects only
+  lmeString2 = 'Response ~ 1 + t_m + (1 + t_m | participant)', # This creates individual slopes
+  lmeString3 = 'Response ~ 1 + t_m*h_bi + (1 + t_m| participant)', # Then add current hunger interaction 
+  lmeString4 = 'Response ~ 1 + t_m*Fac1tot + (1 + t_m | participant)', # Add questionnaire score
+  lmeString5 = 'Response ~ 1 + t_m*ARItot + (1 + t_m | participant)', # Add ARI questionnaire score
+  lmeString6 = 'Response ~ 1 + t_m*PHQ8tot + (1 + t_m | participant)', # PHQ-8 score
+  lmeString7 = 'Response ~ 1 + t_m*GADtot + (1 + t_m | participant)', # GAD score
+  lmeString8 = 'Response ~ 1 + t_m*h_bi*Fac1tot + (1 + t_m| participant)' # MEAL irr
+  )
+
+# Create all combinations of emotions and model strings
+combinations <- expand.grid(emotions, lme_model_strings)
+names(combinations) <- c("Emo", "String")
+
+# Create a function to fit models
+fit_models <- function(emotion, lme_model_string) {
+#  print(paste("Fitting model for emotion:", emotion, "and model string:", lme_model_string))
+  model <- mood %>%
+    filter(Emo == emotion) %>%
+    lmer(data = ., lme_model_string, REML= FALSE, control = lmerControl(optimizer = "bobyqa"))
+  return(model)
+}
+
+# Use mapply to fit models for each combination
+results_list <- mapply(fit_models, combinations$Emo, combinations$String, SIMPLIFY = FALSE) %>%
+  set_names(paste(combinations$Emo, combinations$String, sep = "_"))
+
+# Defining the corresponding names for each emotion
+emotion_names <- c("mdot_models", "bdot_models", "fdot_models") 
+
+# Use lapply to create a named list of LMMs for each emotion
+mod_list <- setNames(
+  lapply(emotions, function(emotion) {
+    results_list[grep(emotion, names(results_list))]
+  }),
+  emotion_names
+)
+
+# check for number of obs being the same across models
+# lapply(results_list, nobs) # 6838 for all
+
+# Define two functions for reporting LMEs
+# One conversion to df, one used for presenting tables 
+
+lmedf <- function(model) {
+  model %>% 
+    tidy(conf.int = TRUE, conf.method = "profile") %>% 
+    select(-std.error, -statistic, -df) %>% 
+    mutate(p.value = round(p.value, 3)) %>% 
+    mutate(across(c("estimate", "conf.low", "conf.high"), round , 2)) %>% 
+    mutate(
+        term = case_when(
+                term == "(Intercept)" ~ "intercept",
+                term == "t_m" ~ "time (mins)",
+                term == "h_bi1" ~ "hunger",
+                term == "Fac1tot" ~ "MEAL-i",
+                term == "ARItot" ~ "ARI",
+                term == "PHQ8tot" ~ "PHQ-8",
+                term == "GADtot" ~ "GAD-7",
+                term == "t_m:h_bi1" ~ "time*hunger",
+                term == "t_m:Fac1tot" ~ "time*MEAL-i",
+                term == "t_m:ARItot" ~ "time*ARI",
+                term == "t_m:PHQ8tot" ~ "time*PHQ-8",
+                term == "t_m:GADtot" ~ "time*GAD-7",
+                term == "sd__(Intercept)" ~ "SD intercept",
+                term == "cor__(Intercept).t_m" ~ "cor int time",
+                term == "sd__t_m" ~ "SD time",
+                term == "sd__Observation" ~ "SD observation",
+                TRUE ~ term)) %>%
+        mutate(
+        effect = case_when(
+                effect == "ran_pars" ~ "random",
+                TRUE ~ effect))
+} 
+
+mod_table <- function(model, caption) {
+  model %>%
+    mutate(p.value = ifelse(p.value == 0, 
+                            "<0.001", 
+                            as.character(p.value))) %>%
+    regulartable() %>% 
+    set_caption(caption = caption) %>% 
+    fit_to_width(12) %>%
+    width(j = 2:3, width = 1.5) %>%
+    padding(padding = 2, part = "all") %>%
+    align(align = "center", part = "all", j = 4:7) %>%
+    set_header_labels(estimate = "B", conf.low = "95%CI lower", conf.high = "95%CI upper", p.value = "p value")
+}
+
+```
+
+```{r MissDat, message = FALSE, echo = FALSE}
+# Chunk for sensitivity 
+# Create a data frame with simple imputation for Fac1 (main var in model)
+# Relevant for 9 adolescents only
+
+# Create new df with imputation values
+scal_imp <- scal %>%
+  filter(sample %in% c("1", "2", "3", "4")) %>% # not relevant for sample 5 or 6
+  mutate(ImpVal = rowMeans(across(all_of(Fac1)), na.rm = TRUE)) %>%
+  mutate(ImpVal = round(ImpVal))
+
+# Paste imputation values over NAs and re-calc Fac1tot
+scal_imp <- scal_imp %>%
+  mutate(across(all_of(Fac1), ~ifelse(is.na(.) == TRUE, ImpVal, .))) %>%
+  mutate(Fac1tot = rowSums(across(all_of(Fac1))))
+
+# Join to the original mood data
+mood_imp <- inner_join(mood_du, scal_imp[keyvars], by = "participant")
+
+# Create a function to fit models - with imputed data
+fit_models_imp <- function(emotion, lme_model_string) {
+#  print(paste("Fitting model for emotion:", emotion, "and model string:", lme_model_string))
+  model_imp <- mood_imp %>% # impute update
+    filter(Emo == emotion) %>%
+    lmer(data = ., lme_model_string, REML= FALSE, control = lmerControl(optimizer = "bobyqa"))
+  return(model_imp)
+}
+
+# Use mapply to fit models for each combination
+results_list_imp <- mapply(fit_models_imp, combinations$Emo, combinations$String, SIMPLIFY = FALSE) %>%
+  set_names(paste(combinations$Emo, combinations$String, sep = "_"))
+
+# Use lapply to create a named list of LMMs for each emotion
+mod_list_imp <- setNames(
+  lapply(emotions, function(emotion) {
+    results_list_imp[grep(emotion, names(results_list_imp))]
+  }),
+  emotion_names
+)
+
+# The coefficients are very similar
+# summary(mod_list$fdot_models[[4]])
+# summary(mod_list_imp$fdot_models[[4]])
+
+```
+
+```{r interact_vis, message = FALSE, echo = FALSE, results='hide', fig.show='hide'}
+
+# Create function which can be run directly below any plot code to output it to a png in the Plots subfolder
+plotout <- function(plotname) {
+ggsave(
+  filename = plotname,
+  plot = last_plot(),
+  path = "/Users/mirandacopps/Library/CloudStorage/OneDrive-UniversityCollegeLondon/UCL PhD/AIM Lab/HangerQuestionnaire/QuestAnalysis/Plots",
+  width = 2000,
+  height = 1000,
+  units = "px")
+}
+
+# Summary by each score of irr_subscale (actual responses)
+MEAL_mood_sum <- mood  %>% 
+group_by(Fac1tot, trial, Emo) %>% 
+  reframe(
+    trial = trial,
+    csum_t = csum_t,
+    t_s = t_s,
+    emotion = factor(Emo, levels = emotions),
+    Fac1tot = Fac1tot,
+    mean = mean(Response),
+    SE = sd(Response) / sqrt(n())
+  ) %>%
+  filter(!is.na(Fac1tot))
+
+# Summary by quartile of mood (for vis)
+# create MEAL-i (Fac1tot) quartiles 
+mood <- within(mood, MEALi_q <- as.integer(cut(Fac1tot, quantile(Fac1tot, probs=0:4/4, na.rm=TRUE), include.lowest=TRUE)))
+
+MEALiq_mood_sum <- mood  %>% 
+group_by(MEALi_q, trial, Emo) %>% 
+  reframe(
+    trial = trial,
+    csum_t = csum_t,
+    t_s = t_s,
+    emotion = factor(Emo, levels = emotions),
+    MEALi_q = MEALi_q,
+    mean = mean(Response),
+    SE = sd(Response) / sqrt(n())) %>%
+  mutate(quartile = case_match(MEALi_q,
+    1 ~ "1st",
+    2 ~ "2nd",
+    3 ~ "3rd",
+    4 ~ "4th")) %>%
+  filter(!is.na(MEALi_q))
+
+
+# Summary by hunger dichotomised (actual responses)
+hunger_mood_sum <- mood  %>% 
+group_by(h_bi, trial, Emo) %>% 
+  reframe(
+    trial = trial,
+    csum_t = csum_t,
+    t_s = t_s,
+    emotion = factor(Emo, levels = emotions),
+    h_bi = h_bi,
+    mean = mean(Response),
+    SE = sd(Response) / sqrt(n())
+  ) %>%
+  mutate(h_bi = ifelse(h_bi == "0", "low", "high"))
+
+## Testing Assumptions
+# These are for fdot models, can be updated to mdot or bdot
+tdat <- data.frame(predicted = predict(mod_list$fdot_models[[4]]), 
+                   residual = residuals(mod_list$fdot_models[[4]]))
+
+# pred vs residuals (some skew)
+assu1 <- plot(mod_list$fdot_models[[4]])
+
+# Histogram of residuals (normal but steep)
+assu2 <- ggplot(tdat,aes(x=residual)) + geom_histogram(bins=20, color="black")
+
+# qq plot, deviation from line at each side
+assu3 <- ggplot(tdat,aes(sample=residual)) + stat_qq() + stat_qq_line()
+
+# histogram of MEAL_irr
+# normal-ish distribution but a bit flat (platykurtic). N=400
+MEAL_irr_hist <- scal %>%
+   ggplot(aes(Fac1tot)) +
+  geom_histogram(bins = 16)
+
+## Three-Way Interaction Vis
+
+three_mood_sum <- mood  %>% 
+group_by(Fac1tot, h_bi, trial, Emo) %>% 
+  reframe(
+    trial = trial,
+    csum_t = csum_t,
+    t_s = t_s,
+    emotion = factor(Emo, levels = emotions),
+    Fac1tot = Fac1tot,
+    h_bi = h_bi,
+    mean = mean(Response),
+    SE = sd(Response) / sqrt(n())
+  ) %>%
+  filter(!is.na(Fac1tot))
+
+three_vis <- three_mood_sum %>% 
+  ggplot(aes(x = trial, y = mean, group = Fac1tot)) +
+  geom_line(linewidth = 1, aes (color = Fac1tot)) +
+  geom_ribbon(aes(ymin = mean - SE, ymax = mean + SE, fill = Fac1tot), alpha = 0.2) +
+  xlab("Trial") +
+  ylab("Average Mood Rating") +
+  labs(color = "MEALirr") +
+  theme_minimal() +
+  scale_x_continuous(limits=c(0,12), expand = c(0, 0)) + 
+  scale_y_continuous(limits=c(0,100),expand = c(0, 0)) +
+  guides(fill="none") +
+  facet_wrap(~h_bi + emotion) + 
+  theme(panel.spacing.x = unit(0.7, "lines"),legend.position = "bottom")
+
+## Predictions for happy response: three-way interaction
+
+hap <- mood %>% filter(Emo == "happy") %>% filter(!is.na(Fac1tot))
+hap$thr_p <- predict(mod_list$mdot_models[[8]])
+Fac1_med <- median(mood$Fac1tot, na.rm = TRUE)
+hap$Fac1_bi <- ifelse(hap$Fac1tot > Fac1_med, "high_MEAL", "low_MEAL")
+hap$h_bi <- ifelse(hap$h_bi == "1", "high_Hunger", "low_Hunger")
+hap$Fac1_h_bi <- paste(hap$Fac1_bi, hap$h_bi, sep = "-")
+
+three_hap_sum <- hap  %>%
+group_by(h_bi, Fac1_h_bi, trial) %>%
+  reframe(
+    trial = trial,
+    csum_t = csum_t,
+    t_s = t_s,
+#    Fac1tot = Fac1tot,
+    Fac1_h_bi = Fac1_h_bi,
+    h_bi = h_bi,
+    mean = mean(thr_p),
+    SE = sd(thr_p) / sqrt(n())
+  ) 
+
+three_hap_vis <- three_hap_sum %>%
+  ggplot(aes(x = trial, y = mean, group = Fac1_h_bi)) +
+  geom_line(linewidth = 1, aes (color = Fac1_h_bi)) +
+  geom_ribbon(aes(ymin = mean - SE, ymax = mean + SE, fill = Fac1_h_bi), alpha = 0.2) +
+  xlab("Trial") +
+  ylab("Average Mood Rating") +
+  labs(color = "group") +
+  theme_minimal() +
+  scale_x_continuous(limits=c(0,12), expand = c(0, 0)) +
+  scale_y_continuous(limits=c(0,100),expand = c(0, 0)) +
+  guides(fill="none") +
+ # facet_wrap(~h_bi) +
+  theme(panel.spacing.x = unit(0.7, "lines"),legend.position = "bottom")
+
+```
+
+{{< pagebreak >}}
+
+::: {custom-style="CentreBold"}
+Abstract
+:::
+
+**Background**
+
+Some people experience mood changes when hungry. However, the relevance of this phenomenon to clinical conditions, such as depression and eating disorders, is understudied. Therefore, we devised a questionnaire to measure hunger-related mood dysregulation.
+
+**Methods**
+
+We developed and validated the Mood, Emotions and Appetite List (MEAL) using exploratory and confirmatory factor analysis in adults and adolescents in the community, and adults with a history of mental health disorder (N = 1,119). We examined the association of MEAL scores with happiness, frustration and boredom during the frustration-inducing mood drift task, in which participants wait for six minutes and rate their mood every 30 seconds.
+
+**Results**
+
+The MEAL showed good psychometric properties, capturing three factors for hunger-related 'irritability', 'low mood' and 'somatic feelings' (RMSEA = 0.03 in community adults, 0.05 in community adolescents, 0.08 in adults with mental health disorder history). Quantitative and qualitative responses evidenced that hunger-related mood dysregulation impacts relationships, work and other activities. MEAL scores were associated with irritability, depression, anxiety and menstrual symptoms. In the mood drift task, the irritability subscale (MEAL-i) demonstrated a significant interaction with time, such that individuals with higher MEAL-i scores reported steeper decreases in happiness ($B$ = -0.11; 95% CI: -0.16–-0.06) and steeper increases in boredom ($B$ = 0.06; 95% CI: 0.00–0.12) and frustration ($B$ = 0.12; 95% CI: 0.05–0.19).
+
+**Conclusions**
+
+The MEAL measures individual differences in hunger-related mood dysregulation, is associated with mental health, self-reported functioning, and predicts faster worsening of mood during experimentally induced frustration.
+
+{{< pagebreak >}}
+
+### Introduction
+
+Some people experience intense irritability when hungry, colloquially termed “hanger” [@monello1967; @stevenson_interoceptive_2023], and evidence suggests that hunger also elicits other negative feelings [@swami_hangry_2022]. Are such negatively valenced experiences innocuous or do they signal risk for adverse outcomes? This question remains surprisingly understudied given its potential implications both for understanding behaviour and preventing negative outcomes. In this pre-registered study, we report on how to measure inter-individual differences in hunger-related mood dysregulation, examine how these relate to psychopathology and impairment, and experimentally test whether these trait differences impact momentary mood. We examine these questions in adults and adolescents in the community, and in people with a history of mental health disorder.
+
+Studying the relationship between food intake and mood is critical to understanding human behaviour and informing clinical practice. Mood relates to fluctuations in the environment [@nettle_evolutionary_2012], helping motivate behaviour that increases chances of survival. Scarcity of food is a threat to survival and food has hedonic properties for humans. Therefore, it is intuitive that mood tracking of hunger would be adaptive, which would explain the link between hunger and mood dysregulation. Experimental evidence supports this theory. Women showed increased anger, tension, fatigue and confusion, and lower vigour after an overnight fast [@ackermans_hunger_2022]; adolescents were less alert, calm and content after missing breakfast [@defeyter_effect_2013]; and animals displayed increased aggression after food restriction [@edmunds2021]. Similarly, studies link blood glucose levels to aggressive tendencies [@dewall_sweetened_2011; @bushman_low_2014].
+
+From a clinical perspective, the question arises as to whether hunger-related mood dysregulation signals meaningful vulnerability to states of hunger in a way that indicates risk of psychopathology or whether they are transient and inconsequential. If the former, they would be expected to impact daily life and to be a marker of more general dysregulated mood in response to environmental triggers. There are several reasons why hunger-related mood dysregulation may indicate risk for psychopathology. First, many mental disorders involve disturbances in mood and eating. For example, appetite changes are a symptom of depression [@simmons2020]; restrictive eating disorders often co-occur with low mood [@americanpsychiatricassociation2013]; some people binge eat to cope with negative emotions [@evers_feeding_2010]. Second, hunger may be particularly relevant to children and young people's mental health as they learn how to interpret bodily cues for hunger, via interoception, and how to employ emotion regulation strategies [@harshaw_interoceptive_2015; @stevenson_development_2023]. Rates of mood and eating disorders also increase during adolescence, and children and young people may find that their eating is regulated in school or by parents.
+
+To examine mood dysregulation during hunger we need valid and reliable measurements. Most studies on hunger and mood have used experimental fasting protocols, which are not always feasible. With that in mind, we present the development and validation of a self-reported measure of hunger-related mood dysregulation. For such a measure to be valuable it should be associated not only with functioning and mental health but also with experimental mood induction, such as frustration, to complement prior studies. One frustrating environment in daily life is being forced to wait [@jangraw_highly_2023]. Waiting is generally aversive (e.g. the impatience felt when queuing), and one possible reason is that it obstructs the adaptive behaviour of exploring or exploiting the environment. It is expected that hunger - which can represent threat or absence of reward, and can reduce emotions regulation abilities - would make people more sensitive to experience aversion during waiting, as it is an additional signal that the organism is in a non-optimal state [@jangraw_highly_2023].
+
+We developed (aim 1) the Mood, Emotions and Appetite List (MEAL) to measure inter-individual differences in hunger-related mood dysregulation in community adults and adolescents, and individuals with a history of mental health disorder. To refine the MEAL, we used an iterative process of exploratory and confirmatory factor analysis (EFA and CFA, respectively), with expert input and participants' qualitative responses. We hypothesised that hunger-related mood dysregulation would show a multifactorial structure with good psychometric properties and invariance across samples. Next, we examined (aim 2) the relationship of the MEAL to mental health and functioning. We hypothesised that hunger-related mood dysregulation would be positively associated with irritability, depression, anxiety, impacts on daily life and menstrual symptoms (motivated by reported concurrent menstrual appetite and mood changes). Lastly (aim 3), we examined whether MEAL scores moderated momentary mood responses during the mood drift task. We hypothesised that higher MEAL scores would predict faster mood worsening. Our hypotheses were pre-registered at \[https://osf.io/drst5\].
+
+### Methods
+
+#### Participants and procedures
+
+We recruited six samples for the present study. The first three samples were adults recruited from Prolific (www.prolific.com), aged 18-30, living in the United Kingdom (UK), fluent in English, with a Prolific approval rating of \>90%. We recruited sample 1 (n=202) for EFA, sample 2 (n=160) for the purpose of CFA and sample 3 (n=84) for test-retest analysis (52/84 completed the MEAL twice). Samples 1-3 completed all questionnaires and the mood drift task (hosted on Gorilla, www.gorilla.com).
+
+Samples 4 and 5 (aged 14-18) were recruited from schools in England, and tested in groups in classrooms, to validate the MEAL in adolescents. Adolescents provided demographic information through REDCap [@harris2009], and could skip questions they did not wish to answer. Sample 4 (n = 135) completed questionnaires followed by the mood drift task (9 participants do not have task data due to technical issues). Sample 4 were cluster-randomised to receive a snack bar before or after testing, but we determined that this manipulation did not impact the results and therefore participants from both conditions are presented together. Sample 5 completed the MEAL and questionnaires for symptoms of depression and anxiety. Thirteen participants in sample 5 answered less than half the MEAL items and were excluded, resulting in n = 201.
+
+Sample 6 was recruited from two studies run by King's College London (KCL): the Genetics Links to Anxiety and Depression (GLAD) Study [@davies2019] and the Eating Disorders Genetics Initiative UK [EDGI UK, @monssen2024]. Invitations were sent to the studies' Patient and Public Involvement panels. Participants were based in the UK, aged $\geq$ 16 years. The sample was enriched for people who self-identified as having experienced an affective disorder or eating disorder and is referred to as the enriched sample. Our results are limited to the MEAL, mental health history, demographics, height and weight. Of 371 participants, 337 completed the MEAL (n = 249 from the GLAD Study, n = 62 from EDGI UK and n = 26 from both).
+
+#### Ethical considerations
+
+UCL's Ethics Committee (24867, 28647) and KCL's Health Faculties (Purple) Research Ethics Subcommittee (HR/RGO-24/25-46471) approved the study, and all participants provided consent.
+
+#### Measures
+
+##### MEAL
+
+Initially, we developed 20 items on hunger-related mood dysregulation, in consultation with clinicians, and mental health and appetite researchers. Before completing the MEAL, participants in samples 1-5 were asked "Do you think that being hungry changes your mood in day-to-day life? What changes do you notice? Does this impact your work, school, relationships or other aspects of your life?" (free-text response). We coded all responses, and grouped them into themes for mood, somatic feelings and impacts. Responses from sample 1 were used to inform the refinement of the questionnaire. For the MEAL, all participants were presented with the instruction "Please indicate how much of the time you think the following statements apply to you". The response options were "Never / Almost Never", "Rarely", "Sometimes", "Often" and "Always / Almost Always", which were coded as 0 to 4. We collected responses to these items from sample 1. Using EFA (details in Section 1 of Supplementary Materials) and qualitative feedback, we formed an updated set of 16 items. This comprised 15 core items and one impact item. Impacts covered four areas: (1) relationships with family, (2) relationships with friends or partners, (3) hobbies and/or interests and (4) school and/or work. Sample 2 answered these 16-items (15 + 1), and CFA was performed. After removing items for parsimony, the final version of the MEAL had 12 items (11 + 1), with three subscales for hunger-related irritability, low mood and somatic feelings (MEAL-i, MEAL-l and MEAL-s, respectively). This final version was administered twice (two-weeks apart) in sample 3, and once in samples 4-6.
+
+
+
+##### Physical health and physiology
+
+Adult participants (samples 1-3 and 6) were asked for their height and weight, to calculate body mass index (BMI). The five-item hunger sensitivity subscale of the Adult Eating Behaviour Questionnaire (AEBQ-h) was included for samples 1-3 to test convergent validity [@hunot_appetitive_2016]. Participants rated their current hunger from 0 to 100 using a visual analogue scale (VAS). The resulting distribution was bi-modal, thus current hunger was dichotomised using a median split. We asked female participants in samples 2 and 3 optional questions about regularity of their menstrual cycles, symptoms they experience before and during menstruation (e.g. increased appetite, irritability; coded as 1 or 0 for presence or absence, respectively) and use of hormonal contraception.
+
+##### Mental health
+
+All participants were asked if they had ever been diagnosed with or suspected they have a mental health condition. For samples 1-4, the Affective Reactivity Index (ARI) was included to measure irritability [@stringaris_affective_2012]. For samples 1-5, the Patient Health Questionnaire-8 (PHQ-8) was included to measure depression symptoms [@kroenke_phq-9_2001] and the seven item version of the Generalised Anxiety Disorder (GAD-7) scale was included to measure anxiety symptoms [@spitzer_brief_2006].
+
+##### Mood drift task
+
+Samples 1-4 completed the mood drift task [@jangraw_highly_2023]. In each trial participants waited for 30 seconds, while looking at a fixation cross, and then rated their mood from 0-100 on three VAS scales (happy, bored and frustrated). There were 12 trials, with a total six minutes of waiting time, and there was an additional mood rating before the first trial. Participants could take any amount of time on mood ratings so we removed outlier participants for total time on the task (\> $Q3+1.5*IQR$ or \> $Q1 - 1.5*IQR$, where $Q$ = quartile and $IQR$ = interquartile range). After removing 40 outliers; 15 participants who had technical issues with the task (6 adults, 9 adolescents); and  the final N for the task was 526 (400 adults and 126 adolescents).
+
+After removing 40 outliers and 6 participants who had technical issues (all adults) the final N for the task was 526 (400 adults and 126 adolescents).
+
+#### Statistical analyses
+
+We ran all analyses in R [@rcoreteam2022], using Lavaan [@rosseel_lavaan_2012] for factor analysis and lme4 [@bates_fitting_2015] for linear mixed effects models.
+
+##### Exploratory factor analysis
+
+We computed a Pearson's correlation matrix for all items prior to both EFA and CFA steps. Items which correlated \> 0.8 with other items were removed, retaining one item. Any item with correlations \< 0.3 with all other items were also removed.
+
+We performed EFA on sample 1 data to reduce and refine items. Parallel analysis [@horn_rationale_1965] was performed to indicate the number of factors. Items were removed according to the following criteria: no loading \> 0.4, or cross-loadings \> 0.3 [@vitoratou_listening_2021]. Models were tested separately by sex, and items which loaded onto different factors by sex were removed.
+
+We evaluated factor models using multiple fit indices including the comparative fit index (CFI), Tucker–Lewis index (TLI), root mean squared error of approximation (RMSEA), the standardised root mean squared residual (SRMR), relative $\chi^2$ and the model $\chi^2$ *p* value [@vitoratou_listening_2021]. Models were evaluated against the following criteria: (1) CFI \> 0.90 indicates close fit; (2) TLI \> 0.90 indicates close fit; (3) RMSEA values below 0.08 are deemed adequate fit, and below 0.05 are a close fit [@browne_alternative_1992]; (4) SRMR \< 0.05 indicates a good fit; (5) relative chi-square values close to 2 [calculated as $\chi^2/degrees of freedom$, @alavi_chi-square_2020] and (6) the *p* value for the $\chi^2$ test is expected to be greater than 0.05. Additionally, the Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) were used for model comparison. All models were estimated using maximum likelihood (ML) and unweighted least squares (ULS) as the data were ordinal. As no models showed a substantial difference between ML and ULS, only ML versions are reported. All EFA models were run with geomin oblique rotation.
+
+##### Confirmatory factor analysis
+
+We performed CFA on the responses to 15 items in sample 2. We hypothesised a three-factor solution, which was assessed according to the same fit criteria as EFA. We compared the three-factor model to one- and two-factor models. CFA models were estimated in the same manner as EFA and only ML estimated models are presented. For adolescents, full information maximum likelihood (FIML) was used to handle missing data. After removing items to avoid redundancy we ran CFA again on the 11 core MEAL items. While it is generally not advised to iterate during CFA, we deemed removal of items to be acceptable, as it did not involve extensive re-specification of the model.
+
+##### Reliability and validity
+
+Factors were assessed for internal consistency, and to minimise redundancy, using Cronbach's $\alpha$ with \> 0.7 being classed as acceptable [@cronbach_coefficient_1951]. Test-retest reliability was assessed using the intraclass correlation coefficients (ICC\[3,1\]) with 2-way mixed effects [@trevethan2017]. In community adults, convergent validity was assessed using Pearson's correlation of the MEAL and AEBQ hunger subscale [@hunot_appetitive_2016].
+
+##### Measurement invariance
+
+We tested the final three-factor MEAL model for measurement invariance between (1) community adults and adolescents; and (2) community adults and the sample enriched for mental health disorders. The latter was split into two subsamples: individuals with any eating disorder experience and individuals with affective disorder experience but no history of eating disorder. This method for dividing the enriched sample was chosen as we expected eating disorder experience would result in more variation in MEAL responses. We tested for loading, intercept and residual invariance [according to @chen2007]. As our sample sizes were unequal we used the following criteria: for loading noninvariance a change of ≤ −0.005 in CFI, supplemented by a change of ≥ 0.010 in RMSEA or a change of ≥ 0.025 in SRMR; and for intercept and residual noninvariance the last criterion becomes a change of ≥ 0.005 in SRMR.
+
+##### MEAL correlates
+
+We examined MEAL associations with participant sex, age, mental health symptoms (ARI, PHQ-8, GAD-7), BMI and menstrual symptoms, using Pearson's correlations, Student's two sample t-tests and linear regressions.
+
+##### Impact analysis
+
+As exploratory analysis, we ran ANOVAs with Scheffe's post-hoc test to examine associations between MEAL scores and the four impact areas.
+
+##### Mood drift task
+
+We analysed mood drift task data with linear mixed effects (LME) models with two formulations. The first had time as the only fixed effect to confirm mood drift, in line with @jangraw_highly_2023. The second model had an interaction of time with the sum score of MEAL-i. Models were run separately for happiness, frustration and boredom (Ridler et al., preprint), and all models included participant and time as random effects.
+
+$$mood~ \sim 1 + time + (1 + time | participant)$$ {#eq-1}
+
+$$mood~ \sim 1 + time*MEAL\text{-}i + (1 + time | participant)$$ {#eq-2}
+
+For @eq-2, the MEAL-i was used because irritability is of particular relevance to hunger-related mood dysregulation, and because items were consistent across samples 1-4, thus providing greater statistical power.
+
+We also tested whether current hunger (dichotomised) was associated with responses in the task. As exploratory analyses, we tested whether ARI, PHQ-8 or GAD-7 were associated with mood drift responses.
+
+### Results
+
+#### Sample characteristics
+
+Demographic information is presented in @tbl-samples. Community adult samples were balanced for sex, whereas there were more males in sample 5 and more females in sample 6. A majority of adult participants had diagnosed or self-diagnosed mental health conditions, present or past.
+
+```{r SampCharTab, message = FALSE, echo = FALSE, results = "as-is"}
+#| label: tbl-samples
+#| tbl-cap: "Demographic characteristics of samples in the present study"
+#| tbl-cap-location: top
+
+demogtab <- rbindlist(list(ntab, sextab, agetab, ethtab, emptab, mhtab), fill = TRUE)
+
+demogtab <- demogtab %>%
+  add_row(Measure = "Ethnicity, n (%)", .before = 4) %>%
+  add_row(Measure = "Employment Status, n (%)", .before = 11) %>%
+  add_row(Measure = "Lifetime mental health diagnosis and self-diagnosis, n (%)", .before = 17)
+
+demogtab %>%
+  regulartable() %>% 
+  width(j = 2:7, width = 0.9) %>%
+  merge_at(i=c(4), j = 1:7) %>%  # Format the measure sub-headers
+  merge_at(i=c(11), j = 1:7) %>%
+  merge_at(i=c(17), j = 1:7) %>%
+  bold(i = c(4,11,17))%>% 
+  colformat_char(na_str = "-") %>% # fill in blanks
+  align(align = "center", part = "all", j = 2:7) %>%
+  add_footer_lines(value = "Community adults from samples 1-3 were Prolific users; community adolescents from samples 4 and 5 were recruited from secondary schools in South East England, East England and London; and adults from sample 6 were recruited from the GLAD and EDGI UK studies.") %>%
+  padding(padding = 2, part = "all") %>%
+  add_header_row(values = c("", "Community Adult", "Community Adolescent", "Enriched"), colwidths = c(1, 3, 2, 1))
+
+```
+
+#### MEAL factor analysis
+
+We used EFA to iteratively develop the MEAL (@supptbl-Items20 -10, Section 1 of Supplementary Materials). Based on qualitative feedback (@supptbl-Qual in Section 2 of Supplementary Materials) from sample 1, we developed additional items and modified wording of some items. Regarding low mood, we removed "I get more sad than other people I know", and added "I become tearful or weepy". A theme of somatic feelings emerged, with 29% of participants citing a range of sensations (e.g. "having less energy", "feel weak and faint", "physical issues like a headache or feeling sick"). We also simplified some language, e.g. "I have more arguments with people or snap at people more" was changed to "I argue or snap at people more". 102 (52%) participants noted that hunger impacts their work, relationships or other activities (e.g. "I concentrate less and am probably less productive", "\[hunger\] can impact me in social situations as I'm not as friendly as I would like"). Thus, we added the impact question.
+
+```{r ModFitTxt, echo=FALSE, message = FALSE}
+
+# Values to calculate for text
+chisq_rel <- round((summary(cfa2_3)$test$standard$stat/summary(cfa2_3)$test$standard$df), 2)
+chisq_p <- round((summary(cfa2_3)$test$standard$p),3)
+chisq_rel_ad <- round((summary(cfa_ad)$test$standard$stat/summary(cfa_ad)$test$standard$df), 2)
+chisq_rel_en <- round((summary(cfa_en)$test$standard$stat/summary(cfa_en)$test$standard$df), 2)
+
+```
+
+We hypothesised a three-factor model of MEAL-i, MEAL-l and MEAL-s for CFA (details in Section 1 of Supplementary Materials; @supptbl-Items16 -13). The model fit with 11 items was excellent (@tbl-psychomet, CFI = `{r} round(fitMeasures(cfa2_3, "cfi")[1],2)`, TLI = `{r} round(fitMeasures(cfa2_3, "tli")[1],2)`, RMSEA = `{r} round(fitMeasures(cfa2_3, "rmsea")[1],2)`, SRMR = `{r} round(fitMeasures(cfa2_3, "srmr")[1],2)`, relative $\chi^2$ = `{r} chisq_rel` and $\chi^2$ = `{r} round(summary(cfa2_3)$test$standard$stat, 2)` \[*p* = `{r} chisq_p`\]). The three-factor model fit more closely than either a one- or two-factor model. The internal consistency and test-retest reliability were also good (@tbl-psychomet). The observed Pearson's *r*s between factors were: 0.77 for MEAL-i and MEAL-l, 0.63 for MEAL-i and MEAL-s, and 0.74 for MEAL-l and MEAL-s. MEAL scores showed a large correlation with AEBQ hunger sensitivity (Pearson's *r* = `{r} round(aebqh_cor$r[1,2], 2)`, *p* \< 0.001), demonstrating convergent validity.
+
+```{r TabPsychomet, echo=FALSE, message = FALSE}
+#| label: tbl-psychomet
+#| tbl-cap: "The MEAL Questionnaire: psychometric properties of the eleven core items with three factors, and wording for the impact item"
+#| tbl-cap-location: top
+
+# Add Impact question (+1)
+Imp1 <- "I12"
+Imp2 <- "When I have not eaten in a while I experience problems with my:
+ - Family
+ - Friends and/or partner
+ - Hobbies and/or interests
+ - School and/or work
+"
+Imp3 <- "Impact"
+Imp4 <- "" # then empty vars as there is no estimate for the impact question
+ImpactQ <- data.frame(Imp1, Imp2, Imp3, Imp4)
+
+cfa_loadings <- parameterEstimates(cfa2_3, standardized = TRUE) %>%
+    filter(op == "=~") %>%  # Filter to only loadings
+    select(lhs, rhs, pvalue, std.all) %>%   # Select relevant columns
+    mutate(std.all = round(std.all, 2)) %>% # Round standardized loadings
+    mutate(std.all = ifelse(std.all < 0.3, ".", std.all)) %>% # Format small loadings
+    select(-pvalue, -lhs) %>%    # Remove p-value column 
+    rename(CFAnames = rhs, Est = std.all)      # Rename for joining
+
+CFAlabels3_df <- left_join(CFAlabels3_df, cfa_loadings)
+
+Factor_list <- c("MEAL-i", "MEAL-l", "MEAL-s")
+
+# Format items df
+Tab1 <- CFAlabels3_df %>%
+  mutate(CFAnames = 01:11) %>%
+  mutate(Factor = case_match(Factor,
+                             "Irritability" ~ "MEAL-i",
+                             "Low Mood" ~ "MEAL-l",
+                             "Somatic" ~ "MEAL-s"))
+Tab1$CFAnames <- paste0('I', Tab1$CFAnames)
+
+# Join 11 + 1
+Tab1 <- rbind(as.matrix(Tab1), as.matrix(ImpactQ))
+Tab1 <- as.data.frame(Tab1)
+
+# Create table of Chronbach's alphas
+alphatab <- cas_cfa %>%
+  mutate_at(c(2:4), as.numeric) %>%
+  mutate_if(is.numeric, round, 2) %>%
+  mutate(alpha = paste0(`Cronbach's alpha`, " (", `low CI`, ", ", `up CI`, ")")) %>%
+  select(Factor, alpha)
+
+alphatab$Factor <- Factor_list
+alphatab_ad$Factor <- Factor_list
+alphatab_en$Factor <- Factor_list
+
+Tab1 <- left_join(Tab1, alphatab, by = "Factor")
+Tab1 <- Tab1 [,c(1,2,4,3,5)]# rearrange columns
+
+# Create ICCs (note these are hard-coded as they are calculated in a separate script: HungerQuestRetest2.qmd)
+ICC <- c("0.72 (0.55, 0.83)", "0.66 (0.48, 0.79)", "0.76 (0.61, 0.85)")
+retests <- data.frame(Factor_list, ICC)
+colnames(retests) <- c("Factor", "ICC")
+Tab1 <- left_join(Tab1, retests, by = "Factor")
+
+# Format adolescent table
+Tab_ad2 <- Tab_ad %>% select("CFAnames", "Est", "alpha") %>%
+  rename("Est_ad" = Est, "alpha_ad" = alpha)
+
+# Format enriched table
+Tab_en2 <- Tab_en %>% select("CFAnames", "Est", "alpha") %>%
+  rename("Est_en" = Est, "alpha_en" = alpha)
+
+Tab_all <- left_join(left_join(Tab1, Tab_ad2, by = "CFAnames"), Tab_en2, by = "CFAnames") %>%
+  mutate(Order = c(10, 1, 7, 11, 9, 5, 8, 3, 2, 4, 6, 12)) %>%
+  relocate("Factor", "Order", "CFAnames", "CFAlabels") %>%
+  select(-CFAnames)
+
+Tab_all %>%
+  regulartable() %>% 
+  set_header_labels(Factor = "Factor", CFAlabels = "Label", Order = "#", Est = "Est", alpha = "alpha (95%CIs)", ICC = "ICC (95%CIs)", Est_ad = "Est", alpha_ad = "alpha (95%CIs)", Est_en = "Est", alpha_en = "alpha (95%CIs)") %>% 
+  width(j=~CFAlabels, width=1.2) %>%
+  width(j=~Order, width=0.1) %>%
+  width(j=~alpha, width=0.4) %>%
+  width(j=~ICC, width=0.4) %>%
+  width(j=~alpha_ad, width=0.4) %>%
+  width(j=~alpha_en, width=0.4) %>%
+  merge_v(j = c("Factor", "alpha", "ICC", "alpha_ad", "alpha_en")) %>%
+  merge_at(i = 12, j = 3:10) %>%
+  add_header_row(values = c("", "Community Adult", "Community Adolescent", "Enriched"), colwidths = c(3, 3, 2, 2)) %>%
+  align(j=4:10, align = "center", part = "all") %>%
+  hline(i=4) %>%
+  hline(i=8) %>%
+  hline(i=11) %>%
+  vline(j=3, part = "body") %>%
+  vline(j=6, part = "body") %>%
+  vline(j=8, part = "body") %>%
+  paginate(init = FALSE, hdr_ftr = TRUE) %>%
+  add_footer_lines(value = "The impact question is included in the MEAL questionnaire but not the factor structure or sum score. # = Order of items when presenting the MEAL, Est = factor loading for each item in the three-factor CFA model, alpha = Cronbach's alpha for measuring internal consistency, ICC = intraclass correlation coefficient for measuring test-retest reliability over a two-week period, 95%CIs = 95% confidence intervals. Community adults n for Est and alpha was 160, for ICC was 52; community adolescents n was 336 (135 + 201); enriched sample n was 337")
+
+```
+
+The three-factor model showed good fit in adolescents (CFI = `{r} round(fitMeasures(cfa_ad, "cfi")[1],2)`, TLI = `{r} round(fitMeasures(cfa_ad, "tli")[1],2)`, RMSEA = `{r} round(fitMeasures(cfa_ad, "rmsea")[1],2)`, SRMR = `{r} round(fitMeasures(cfa_ad, "srmr")[1],2)`, relative $\chi^2$ = `{r} chisq_rel_ad`, the model $\chi^2$ = `{r} round(summary(cfa_ad)$test$standard$stat, 2)` \[*p* \< 0.001\]). The significant $\chi^2$ was the only fit statistic which did not meet its criterion. We demonstrated loading, intercept and residual invariance between community adults and adolescents.
+
+The three-factor model showed adequate fit in the enriched sample (@tbl-psychomet), with all indices apart from the $\chi^2$ significance test and relative $\chi^2$ meeting criteria (CFI = `{r} round(fitMeasures(cfa_en, "cfi")[1],2)`, TLI = `{r} round(fitMeasures(cfa_en, "tli")[1],2)`, RMSEA = `{r} round(fitMeasures(cfa_en, "rmsea")[1],2)` and SRMR = `{r} round(fitMeasures(cfa_en, "srmr")[1],2)`, relative $\chi^2$ = `{r} chisq_rel_en`, model $\chi^2$ = `{r} round(summary(cfa_en)$test$standard$stat, 2)` \[*p* \< 0.001\]). We demonstrated loading, intercept and residual invariance between three groups: community adults, individuals with a history of eating disorders (including those who also had experience of affective disorder) and individuals with experience affective disorder but not eating disorder.
+
+#### MEAL correlates
+
+Mean MEAL scores for community adults (samples 2, 3), adolescents and the enriched sample are displayed in @tbl-MEALdesc.
+
+```{r MEALDescTab, message = FALSE, echo = FALSE}
+#| label: tbl-MEALdesc
+#| tbl-cap: "Overall MEAL and factor mean scores and Pearson's correlations with mental health measures"
+#| tbl-cap-location: top
+
+# Join desc and cor (community adults)
+desctab <- inner_join(desc, cortab)
+
+## Add the Adolescents to the same table
+# Join adolescent means and corrs
+desctab_ad <- inner_join(desc_ad, cortab_ad, by = (join_by(Factor)))
+
+# Combine adults, ado and enriched
+desc_all <- bind_rows(desctab, desctab_ad, desc_en) %>%
+  add_row(Factor = "Community Adult (samples 2 and 3)", .before = 1) %>%
+  add_row(Factor = "Community Adolescent (samples 4 and 5)", .before = 6) %>%
+  add_row(Factor = "Enriched (sample 6)", .before = 11) %>%
+  mutate(Factor = case_match(Factor,
+    "F1" ~ "MEAL-i",
+    "F2" ~ "MEAL-l",
+    "F3" ~ "MEAL-s",
+    .default = Factor))
+
+desc_all %>%
+  regulartable() %>%
+  set_header_labels(`ARI` = "Irritability", `PHQ-8` = "Depression", `GAD-7` = "Anxiety") %>% 
+  width(j = 1:7, width = 0.7) %>%
+  colformat_num(na_str = "-") %>%
+  align(align = "center", part = "all", j = 2:7) %>%
+  add_footer_lines(value = "Community adults N = 244, adolescent N = 336 (apart from ARI where adolescent N = 133), enriched N = 337. *** p <0.001, ** p <0.01. Irritability was measured with the Affective Reactivity Index (ARI), depression symptoms were measured with the Public Health Questionnaire - 8 item version (PHQ-8), and anxiety symptoms were measure with the Generalised Anxiety Disorder - 7 item version (GAD-7).") %>%
+  padding(padding = 2, part = "all") %>% 
+  merge_at(i=c(1), j = 1:7) %>%   # Format the sample sub-headers
+  merge_at(i=c(6), j = 1:7) %>% 
+  merge_at(i=c(11), j = 1:7) %>% 
+  align(align = "center", part = "body", i = c(1,6,11)) %>%
+  bold(i = c(1,6,11)) %>%
+  add_header_row(      # Format the Headers
+    values = c("","Mean (SD)", "Pearson's r"),
+    colwidths = c(1, 3, 3))
+
+```
+
+```{r MEALAgeBmiStats, message = FALSE, echo = FALSE}
+
+# Age
+age_lm_rsq <- round(summary(age_lm_all)$adj.r.squared[1], 2) 
+age_lm_F <- round(summary(age_lm_all)$fstatistic[1], 2)
+age_lm_df2 <- age_lm_all$df.residual
+age_lm_coeff <- round(age_lm_all$coefficients[2], 2)
+
+# BMI
+bmi_lm_F <- round(summary(bmi_lm)$fstatistic[1], 2)
+bmi_lm_df2 <- bmi_lm$df.residual
+bmi_lm_coeff <- round(bmi_lm$coefficients[2], 2)
+
+```
+
+Female participants had higher mean MEAL scores than male participants (@tbl-MEALdesc). A t-test showed the difference to be significant (t\[`{r} round(sexMEAL_t$parameter[1], 2)`\] = `{r} round(sexMEAL_t$statistic[1], 2)`, *p* \< 0.001). Age (in years) was associated with MEAL scores such that older participants had lower MEAL scores ($B$ = `{r} age_lm_coeff`, *p* \<0.001; adjusted $R^2$ = `{r} age_lm_rsq`, F(1), (`{r} age_lm_df2`) = `{r} age_lm_F`, *p* \<0.001).
+
+In the community adults and adolescent samples correlations between MEAL and its subscales with irritability, depression and anxiety symptoms ranged from small (*r* = 0.27 for MEAL-s and irritability in adolescents) to large (*r* = 0.55 for MEAL and anxiety in community adults; @tbl-MEALdesc). One correlation, between the MEAL-l and irritability in adolescents, was not significant (@tbl-MEALdesc).
+
+```{r MEALSampStats, message = FALSE, echo = FALSE}
+
+sample_lm_rsq <- round(summary(sample_lm)$adj.r.squared[1], 2) 
+sample_lm_df2 <- sample_lm$df.residual
+sample_lm_F <- round(summary(sample_lm)$fstatistic[1], 2)
+sample_lm_p <- round(summary(sample_lm)$coefficients[2,4], 3)
+sample_lm_p2 <- round(summary(sample_lm)$coefficients[3,4], 3)
+
+# Using community adults as the reference group neither the $B$ for the eating disorder (`{r} sample_lm_p`) or the affective disorder (`{r} sample_lm_p2`) groups were significant.
+
+# For specific enriched sub-groups
+en_subs <- scal %>%
+  filter(sample == "6") %>%
+  group_by(mi_group) %>%
+  summarise(
+    mean = mean(MEALtot),
+    sd = sd(MEALtot)
+  )
+
+```
+
+MEAL scores were lower in the enriched sample compared to community adults (@tbl-MEALdesc). In the enriched sample, participants with a history of eating disorder, including co-occurring affective disorder, had a mean MEAL score of `{r} round(as.numeric(en_subs[en_subs$mi_group == "ED", "mean"]), 2)` (SD = `{r} round(as.numeric(en_subs[en_subs$mi_group == "ED", "sd"]), 2)`); and those with a history of affective disorder had a mean MEAL score of `{r} round(as.numeric(en_subs[en_subs$mi_group == "AD", "mean"]), 2)` (SD = `{r} round(as.numeric(en_subs[en_subs$mi_group == "AD", "sd"]), 2)`). After controlling for sex and age, a linear model showed differences between the community adults and enriched sample to be non-significant (model adjusted $R^2$ = `{r} sample_lm_rsq`, F(3), (`{r} sample_lm_df2`) = `{r} sample_lm_F` \[*p* \< 0.001\]).
+
+In exploratory analysis, BMI did not significantly explain further variation in MEAL scores ($B$ = `{r} bmi_lm_coeff`, *p* = `{r} round(summary(bmi_lm)$coefficients[2,4], 3)`, F(3),(`{r} bmi_lm_df2`) = `{r} bmi_lm_F`). Independent samples t-tests showed that neither regularity of periods (t\[`{r} round(per_irreg_t$parameter[1], 2)`\] = `{r} round(per_irreg_t$statistic[1], 2)`, *p* = `{r} round(per_irreg_t$p.value, 3)`) or use of hormonal contraception (t\[`{r} round(per_contra_t$parameter[1], 2)`\] = `{r} round(per_contra_t$statistic[1], 2)`, *p* = `{r} round(per_contra_t$p.value, 3)`) were associated with MEAL scores. The number of symptoms experienced before or during menstruation was significantly associated with MEAL scores ($B$ = `{r} round(summary(per_sym_lm)$coefficients[2,1], 2)`, *p* \<0.001; adjusted $R^2$ = `{r} round(summary(per_sym_lm)$adj.r.squared[1], 2)`, F(1), (`{r} per_sym_lm$df.residual`) = `{r} round(summary(per_sym_lm)$fstatistic[1], 2)`, *p* \<0.001). Additionally, higher MEAL scores were associated with reporting increased appetite before or during menstruation (mean = `{r} round(per_sym_app_t$estimate[2],2)`) compared to no appetite increase (mean = `{r} round(per_sym_app_t$estimate[1],2)`, t\[`{r} round(per_sym_app_t$parameter[1], 2)`\] = `{r} round(per_sym_app_t$statistic[1], 2)`, *p* = `{r} round(per_sym_app_t$p.value, 3)`).
+
+#### MEAL impact analysis
+
+We defined substantial impacts as response categories "often" and "always/almost always" and see that community adults report the greatest impacts on school/work (25%). For adolescents we see the greatest impacts on hobbies/interests and school/work (both about 26%). In the enriched sample, more people (15.8%) endorsed hobbies/interests than other impacts. See section 3 of the Supplementary Materials for further analyses of impacts. ANOVAs testing associations between MEAL score and each impact area were significant (all *p* \< 0.001). Scheffe's tests revealed that the comparisons between the first four levels (comparisons: 1-0, 2-1, 3-2) were significant for all impact areas (*p* \< 0.001). The comparison between the final two levels (4-3), was only significant for hobbies/interests (*p* = `{r} round(scheffe_tab$pval[[40]],3)`).
+
+#### MEAL-i and task-based mood drift
+
+As expected, happiness decreased and frustration and boredom increased during the mood drift task. MEAL-i demonstrated a significant interaction with time for happiness, boredom and frustration (@fig-famlme). Significant associations were in the expected directions, such that higher MEAL-i scores were associated with a steeper decline in happiness and steeper increases in boredom and frustration. MEAL-i was associated with significantly lower initial happiness, and higher initial boredom and frustration (@tbl-famlmes).
+
+```{r FamLmeTab, message = FALSE, echo = FALSE, results = "as-is", warning = FALSE}
+#| label: tbl-famlmes
+#| tbl-cap: "Fixed effects of linear mixed effects models showing MEAL-i prediction of mood response in a frustrating waiting task"
+
+alldot_fam <- rbind(lmedf(mod_list$mdot_models[[4]]), lmedf(mod_list$bdot_models[[4]]), lmedf(mod_list$fdot_models[[4]]))
+
+alldot_fam %>%
+  mutate(Mood = rep(c("Happy", "Bored", "Frustrated"), each = 8)) %>%
+  mutate(p.format = ifelse(p.value == 0, "<0.001", as.character(p.value))) %>%
+  filter(term != "cor int time") %>%
+  select(Mood, effect, term, estimate, conf.low, conf.high, p.format) %>%
+  regulartable() %>% 
+  width(j = 1:3, width = 1.2) %>%
+  width(j = 4:7, width = 1) %>%
+  merge_v(j = 1:2) %>%
+  padding(padding = 2, part = "all") %>%
+  hline(i=4) %>%
+  hline(i=7) %>%
+  hline(i=11) %>%
+  hline(i=14) %>%
+  hline(i=18) %>%
+  align(align = "center", part = "all", j = 4:7) %>%
+  add_footer_lines(value = "Note: B = estimate of coefficients from LME models. The n = 523 as 3 adolescent participants did not have complete MEAL-i data.") %>%
+  set_header_labels(effect = "Effect", term = "Term", estimate = "B", conf.low = "95%CI lower", conf.high = "95%CI upper", p.format = "p value")
+
+```
+
+
+Current state hunger showed main effect associations with all three mood states, but was not associated with the steepness of mood slopes. Similarly, none of the ARI, PHQ-8 or GAD-7 moderated the steepness of the mood slopes. Details of these analyses are in section 4 of the Supplementary Materials (@supptbl-LMEall-hun -21).
+
+### Discussion
+
+We demonstrated that the MEAL can measure individual differences in hunger-related mood dysregulation, showing good psychometric properties in community adults, community adolescents and individuals with past/current psychiatric disorders. MEAL scores were associated with symptoms of irritability, depression and anxiety. A sizable minority of participants (8.9-26.6%) endorsed that hunger-related mood dysregulation substantially impacted them. This finding was supported by qualitative responses (e.g. "If I'm on an empty stomach \[I\] can't function correctly", "\[hunger\] affects my mental health in a big way, and even small tasks feel overwhelming"). Finally, we showed that MEAL-i scores predicted faster worsening mood during a frustrating task.
+
+The MEAL’s three-factor structure highlights the importance of considering multiple facets of mood in relation to hunger, consistent with experimental fasting studies which have evidenced changes in multiple mood states [@ackermans_hunger_2022; @defeyter_effect_2013]. It may be that ‘hanger’ has previously received more attention because it is more likely to be externalised, compared to low mood or somatic feelings.
+
+Females and younger participants scored higher than males and older participants on the MEAL, respectively. The pattern of sex differences on the MEAL is in keeping with response trends on self-rated irritability [@vidal-ribas_informant_2023-1], depression [@thibodeau_phq-9_2014] and anxiety [@spitzer_brief_2006] symptom scales. These sex differences may be driven by a combination of physiology, environmental risk factors, socialisation and methodological features [@patalay2023]. The trend of FAMIN declining with age may be partially explained by adolescence being a time of high energy requirements [@das2017], whereas older age is associated with appetite decline [@giezenaar2016]. The association of menstrual cycle symptoms with the MEAL suggests a role of hormonal fluctuations in hunger-related mood dysregulation.
+
+We also demonstrated the association of hunger-related mood dysregulation to mental health. In community adults, MEAL scores showed correlations with irritability, depression and anxiety; while in adolescents it showed small correlations with irritability and moderate correlations with the depression and anxiety. These associations could represent hunger-related mood dysregulation being a risk factor for poor mental health, although longitudinal designs would be required to test this pathway explicitly. The slightly lower scores in the affective disorder subgroup was surprising given the correlations above, as well as observations of appetite changes in depression [@simmons2020] and anxiety [@rodriguez-moreno2022]. The lack of statistical differences in MEAL scores between community adults and the subgroup with history of eating disorder experience was less surprising as food restriction may induce feelings of satisfaction for some people with anorexia nervosa.
+
+We also show that the MEAL captures impairment in people’s everyday lives, particularly their inter-personal relationships, indicating further that hunger-related mood dysregulation is not simply a transient and innocuous phenomenon. Previous work showed a link between blood glucose and intermarital conflict [@bushman_low_2014], but did not test whether hunger-related mood dysregulation mediated this. Participants referenced difficulty focussing at work or school in qualitative feedback. Therefore, hunger-related mood dysregulation may pose a particular risk in settings where meals are regulated such as schools [@afridi_hunger_2019], shift work [@heath_associations_2019] and prisons [@kushmerick-mccune_hunger_2024].
+
+We demonstrated that the MEAL-i captures sensitivity to environmental changes as MEAL-i scores moderated the extent of mood decline during a frustrating waiting task [@jangraw_highly_2023]. As expected, our results show that elevated MEAL-i scores were associated with more negative mood ratings, and faster mood declines in response to the task, which makes MEAL-i a valuable tool for researching mechanisms of mood dysregulation. Other measures - irritability, depression and anxiety symptoms - did not show associations with steepness of mood slopes, suggesting the MEAL is somewhat unique in capturing susceptibility to mood dysregulation in response to environmental triggers.
+
+#### Strengths and limitations
+
+This pre-registered study has several notable strengths including replication in multiple samples; statistical power and rigorous evaluation of generalisability across samples; experimental validation; and the inclusion of participants' qualitative feedback in item generation for the MEAL.
+
+There were also some limitations to consider. High correlations between factors could suggest redundancy within the questionnaire. However, we did not address this further as the constructs are expected to be related, and the three-factor model fit the data better than one- or two-factor models. As this study is cross-sectional our causal inference is limited.
+
+#### Future research
+
+Longitudinal designs and embedding the MEAL as a screener in experimental studies would allow exploration of whether hunger-related mood dysregulation is a risk-factor for psychopathology and other negative outcomes.
+
+### Conclusions
+
+In this study, we developed a valid and reliable measure of individual susceptibility to hunger-related mood dysregulation with potential utility for clinical, epidemiological and experimental studies. We consider this work foundational to furthering our understandings of hunger-related mood dysregulation, spanning beyond 'hanger' to various mood states, and to mental health symptoms and impacts in daily life.
+
+{{< pagebreak >}}
+
+### Data availability
+
+All data for samples 1-5 is available at https://github.com/MirandaCopps/MEAL_dev/tree/main. For sample 6 data please contact the authors, and data will be made available upon reasonable request.
+
+### Code availability
+
+All code is available at https://github.com/MirandaCopps/MEAL_dev/tree/main
+
+### Acknowledgements
+
+We would like to thank the Prolific users and school pupils who took part in this study for their time and effort, as well as the teachers and administrators who facilitated our school testing sessions. We are also very grateful to participants and representatives of the PPI panels for both EDGI UK and the GLAD Study for completing and providing feedback on the questionnaire items.
+
+### Author contribution
+
+CRediT Taxonomy. Conceptualization – MC, PVR, CL, MH, GB, KA, AC, JJ, EV, AS. Data curation – MC, LS, LQ, RCW, SK. Formal analysis – MC, LS, LQ, RCW, SK. Investigation - MC, LS. Methodology - MC, CL, MH, GB, KA, EV, AS. Project administration – MC, AC. Resources - IS. Supervision – EV, AS. Writing original draft – MC, AS. Writing review & editing – MC, PVR, LS, CL, MH, GB, KA, AC, JJ, EV, AS.
+
+### Ethical standards
+
+The authors assert that all procedures contributing to this work comply with the ethical standards of the relevant national and institutional committees on human experimentation and with the Helsinki Declaration of 1975, as revised in 2008.
+
+{{< pagebreak >}}
+
+# References
+
+::: {#refs}
+:::
+
+{{< pagebreak >}}
+
+# Figure
+
+```{r FamLmeVis, message=FALSE, results='asis', warning=FALSE, echo=FALSE}
+#| label: fig-famlme
+#| fig-cap: "Means and standard errors of mood ratings by trial during the mood drift task, grouped by participants' MEAL-i score quartile rank. Note: quartile ranks are used for visualisation purposes only. The n = 523 as 3 adolescent participants did not have complete MEAL-i data."
+
+plotout <- function(plotname) {
+ggsave(
+  filename = plotname,
+  plot = last_plot(),
+  path = here(), # needs here package
+  width = 150,
+  height = 100,
+  units = "mm",
+  dpi = 800)
+}
+
+MEALiq_mood_sum %>% 
+  ggplot(aes(x = trial, y = mean, group = quartile)) +
+  geom_line(linewidth = 0.5, aes (linetype = quartile)) +
+  scale_linetype_manual(values=c("solid", "dashed", "twodash", "dotted"))+
+  geom_ribbon(aes(ymin = mean - SE, ymax = mean + SE), alpha = 0.2) +
+  xlab("Trial") +
+  ylab("Average Mood Rating") +
+  labs(linetype = "MEAL-i quartile") +
+  theme_bw() +
+  scale_x_continuous(limits=c(0,12), expand = c(0, 0)) + 
+  scale_y_continuous(limits=c(0,100),expand = c(0, 0)) +
+  guides(fill="none") +
+  facet_wrap(~emotion) + 
+  theme(panel.spacing.x = unit(0.7, "lines"), legend.position = "bottom", text=element_text(size=8))
+
+plotout("Copps_Fig1_MealMoodDrift.tif")
+
+```
+
+{{< pagebreak >}}
+
+# Supplementary Materials
+
+## Section 1: Additional Factor Analysis Details
+
+This section contains the results of the exploratory and confirmatory factor analyses (EFA and CFA) in order to provide details of the several rounds of iteration which took place.
+
+All EFA pertains to sample 1 (N = 202) and all CFA to sample 2 (N=160), recruited from Prolific.com.
+
+The initial list of 20 items is displayed in @supptbl-Items20, item numbers (with the prefix HM for hunger and mood) are used to refer to the items throughout this supplement.
+
+::: {#supptbl-Items20}
+```{r QuestLabels, message = FALSE, echo = FALSE, results = "as-is"}
+
+EFAlabels_df %>% 
+  regulartable() %>% autofit() %>% 
+  set_header_labels(EFAnames = "Item", EFAlabels = "Label") %>% width(j=~EFAlabels, width=5)
+
+```
+
+\
+Note: HM03 was reverse coded
+
+Labels and items numbers for the initial list of 20 items in the MEAL questionnaire for EFA
+:::
+
+Inspection of the correlation matrix of the initial 20 items resulted in the removal of four items (@supptbl-CorrMat). Items HM01, HM08 and HM18 were dropped due to high correlations (\> 0.8) and item HM03 was dropped due to all correlations being \< 0.3 or non-significant.
+
+::: {#supptbl-CorrMat}
+```{r ItemCorrEFA, echo=FALSE, message = FALSE, results = "as-is"}
+
+efacorr %>%
+  flextable() %>% 
+  set_header_labels(rowname = "Item")
+  
+```
+
+\
+Note: \* indicates p \< 0.05, \*\* indicates p \< 0.01, \*\*\* indicates p \< 0.001.
+
+Pearson's correlation matrix of initial 20 MEAL items
+:::
+
+```{r ParAn, message = FALSE, echo = FALSE, results = 'hide', warning=FALSE}
+
+# First conduct parallel analysis
+par <- paran(df_efa[EFAnames2], iterations = 5000, centile = 0, quietly = TRUE, status = FALSE, cfa = TRUE, all = TRUE, graph = FALSE, seed = 512)
+
+# Retain 3 factors
+
+# Tutorial: https://www.r-bloggers.com/2016/04/determining-the-number-of-factors-with-parallel-analysis-in-r/
+
+```
+
+Parallel analysis on the remaining 16 items indicated that a model with `{r} par$Retained` factors would be appropriate (adjusted Eigenvalues \> 0). We also tested models with four and five factors for thoroughness, but these both had factors which were unsuitable (i.e. uninterpretable based on content of items). Only the results of models with one to three factors are described here, for brevity.
+
+According to EFA on 16 items, the three-factor model had the best fit with lower AIC, BIC and RMSEA than the one- or two-factor models, although the $\chi^2$ (*p* \< 0.001) and RMSEA (0.9) did not meet our fit criteria (@supptbl-ModelFit16).
+
+::: {#supptbl-ModelFit16}
+```{r Fit16, message = FALSE, echo = FALSE, results = "as-is"}
+# this prints the fit indices from the first round of EFA (16 items)
+result1$fit_table
+
+```
+
+\
+
+Model fit indices of EFA on 16 items, for a one factor, two factor and three factor solution.
+:::
+
+Upon inspection of this model, we identified that the second factor was unsuitable as it had significant cross-loadings (\> 0.3) for two (HM07 and HM12) out of three items (@supptbl-Loadings16).
+
+::: {#supptbl-Loadings16}
+```{r load16, message = FALSE, echo = FALSE, results = "as-is"}
+# this prints the factor loadings from the first round of EFA (16 items)
+loads1
+
+```
+
+\
+
+Factor loadings from the three-factor solution EFA on 16 items
+:::
+
+These two items were removed and a two-factor model was evaluated (@supptbl-ModelFit14 for model fit, @supptbl-Loadings14 for factor loadings). While the model fit did not substantially improve, the factor loadings were more suitable as there were no significant cross-loadings \>0.3 and only one item (HM10) had a loading of \<0.4, which was subsequently removed.
+
+::: {#supptbl-ModelFit14}
+```{r Fit14, message = FALSE, echo = FALSE, results = "as-is"}
+# this prints the fit indices from the second round of EFA (14 items)
+result2$fit_table
+
+```
+
+\
+
+Model fit measures for EFA on 14 items
+:::
+
+::: {#supptbl-Loadings14}
+```{r load14, message = FALSE, echo = FALSE, results = "as-is"}
+# this prints the factor loadings from EFA (14 items)
+loads2
+
+```
+
+\
+
+Factor loadings from the two-factor solution EFA on 14 items
+:::
+
+A two-factor model, with 13 items, was then run separately for male and female participants. The female-only model showed significant cross-loadings \> 0.3 for items HM04 and HM13, thus these items were removed. The sex-specific models are not printed here for brevity but are available upon request from the corresponding author. Single sex models were underpowered according to the rule of thumb of 10 participants per item, however, this statistical limitation was deemed acceptable due to the exploratory nature of EFA.
+
+For the remaining 11 items, we ran a two-factor model (@supptbl-ModelFit11) which resulted in a factor for irritability (factor 1) and a factor for low mood (factor 2; @supptbl-Loadings11).
+
+::: {#supptbl-ModelFit11}
+```{r Fit11, message = FALSE, echo = FALSE, results = "as-is"}
+# Print the table: Model fit for two factor EFA on 11-item list
+result3$fit_table
+
+```
+
+\
+
+Model fit indices for EFA on 11 items
+:::
+
+::: {#supptbl-Loadings11}
+```{r load11, message = FALSE, echo = FALSE, results = "as-is"}
+# this prints the factor loadings from EFA (11 items)
+loads3
+
+```
+
+\
+
+Factor loadings for EFA on 11 items
+:::
+
+The internal consistency of factor 1 was very high (Cronbach's $\alpha$ = `{r} round(ca1$alpha, 2)`, 95%CI = `{r} round(ca1$ci[1], 2)`, `{r} round(ca1$ci[2], 2)`), suggesting redundancy. Thus, the Cronbach's $\alpha$ was re-calculated for all possible combinations of four items to obtain a more parsimonious model. Four items - HM02, HM09, HM11 and HM15- were selected for their internal consistency (Cronbach's $\alpha$ = `{r} round(ca1_4$alpha, 2)`, 95%CI = `{r} round(ca1_4$ci[1], 2)`, `{r} round(ca1_4$ci[2], 2)`) and the coherence of their item content. The internal consistency for factor 2 was good (Cronbach's $\alpha$ = `{r} round(ca2$alpha, 2)`, 95%CI = `{r} round(ca2$ci[1], 2)`, `{r} round(ca2$ci[2], 2)`).
+
+We then ran EFA for a final time. The two-factor solution on eight items showed acceptable fit to the data according to all criteria (@supptbl-ModelFit8).
+
+::: {#supptbl-ModelFit8}
+```{r Fit8, message = FALSE, echo = FALSE, results = "as-is"}
+# this prints the fit indices from the second round of EFA (14 items)
+result4$fit_table
+
+```
+
+\
+
+Model fit measures for EFA on 8 items
+:::
+
+We also deemed the factor loadings to be good, with no cross-loadings and no factor loadings \< 0.4 (@supptbl-Loadings8).
+
+::: {#supptbl-Loadings8}
+```{r load8, message = FALSE, echo = FALSE, results = "as-is"}
+# this prints the factor loadings from EFA (14 items)
+loads4
+
+```
+
+Factor loadings from the two-factor solution EFA on 8 items
+:::
+
+The observed Pearson's correlation between factor 1 and factor 2 had a coefficient of 0.63 (*p* \< 0.001). The internal consistency of the overall scale was good (Cronbach's $\alpha$=0.88, 95%CIs = 0.84, 0.9). This version of the questionnaire also correlated moderately with the AEBQ hunger sensitivity scale (0.52), ARI (0.42), PHQ-8 (0.44) and GAD-7 (0.42; all *p* \< 0.001).
+
+For CFA, we collected responses to 16 items (15 core items plus one for impact).
+
+::: {#supptbl-Items16}
+```{r CFAQuestLabels, message = FALSE, echo = FALSE, results = "as-is"}
+
+CFAlabels_df %>% 
+  regulartable() %>% autofit() %>% 
+  set_header_labels(CFAnames = "Item", CFAlabels = "Label") %>% width(j=~CFAlabels, width=5)
+
+```
+
+\
+Note: This was supplemented by an impact item "When I have not eaten in a while I experience problems with my: Family School and/or work Friends and/or partner Hobbies and/or interests"
+
+Labels for the 15 core items in the MEAL questionnaire for CFA
+:::
+
+During the CFA, no items were removed according to the item correlations criteria (@supptbl-CorrMatCFA).
+
+::: {#supptbl-CorrMatCFA}
+```{r CorrMatCFA15, message = FALSE, echo = FALSE, results = "as-is"}
+
+cfacorr %>%
+  flextable() %>% 
+  set_header_labels(rowname = "Item")
+
+```
+
+\
+Note: \* indicates p \< 0.05, \*\* indicates p \< 0.01, \*\*\* indicates p \< 0.001.
+
+Correlation matrix for 15-items in sample 2
+:::
+
+To make the questionnaire more concise, three items were removed from MEAL-s while retaining Cronbach's $\alpha$ of 0.7-0.9 and suitable item content. Leaving 13 items (12 core items + 1 impact item).
+
+On the 12 items, the observed Pearson's *r*s between the factors were: 0.77 for MEAL-i and MEAL-l, 0.71 for MEAL-i and MEAL-s, and 0.76 for MEAL-l and MEAL-s (all *p* \< 0.001). To minimise redundancy, factor correlations were re-calculated removing one item at a time. This resulted in one item being removed from MEAL-s. The updated factor correlations were *r* = 0.63 for MEAL-i and MEAL-s, and *r* = 0.74 for MEAL-l and MEAL-s (*p* \< 0.001). We compared this final (11 item) model to one-factor and two-factor models (@supptbl-CFAModelFitComp). Model fit indices favoured the three-factor model (lower AIC and BIC), and this was the only model to meet all criteria.
+
+The high Cronbach's $\alpha$ and high correlations between factors could suggest redundancy within the questionnaire. However, we did not address this further as the constructs are expected to be related, and the three-factor model fit the data better than one- or two-factor models.
+
+::: {#supptbl-CFAModelFitComp}
+```{r CFAfitsComp, message = FALSE, echo = FALSE, results = "as-is"}
+
+CFAfin
+
+```
+
+\
+
+Model fit criteria comparing one-, two- and three-factor CFAs on the final 11 core MEAL items. The two factor model combines MEAL-i and MEAL-l as they had the highest correlation.
+:::
+
+## Section 2: Qualitative Feedback
+
+Full qualitative data is available upon request. The table below presents the codings and the percentage of each sample which referred to one of these.
+
+::: {#supptbl-Qual}
+```{r QualTab, message = FALSE, echo = FALSE, results = "as-is"}
+
+qual_tab %>%
+  regulartable() %>% autofit() %>%
+  align(j = 2:4, align = "center", part = "all") %>%
+  add_header_row(top = TRUE, values = c("", "Frequency (%)"), colwidths = c(1,3))
+
+```
+
+Summary of the qualitative data codings, grouped by sample
+:::
+
+## Section 3: Impact Item Analysis
+
+::: {#suppfig-FigImp}
+```{r ImpTab, message = FALSE, echo = FALSE, results = "as-is"}
+
+# Table which is used for vis and the next table in the supp
+imp_tab_all <- bind_rows(imp_tab, imp_tab_ad, imp_tab_en) %>%
+  mutate(item = case_match(item,
+    "ImpFam" ~ "Family",
+    "ImpFrPa" ~ "Friends/Partner",
+    "ImpHobInt" ~ "Hobbies/Interests",
+    "ImpSchWo" ~ "School/Work",
+    .default = item
+  ))
+
+# Visualisation
+impvis <- imp_tab_all %>%
+  mutate(sample = rep(c("Community Adult", "Adolescent", "Enriched"), each = 4)) %>%
+  mutate(ImpactPerc = per_3 + per_4) %>%
+  select(item, sample, ImpactPerc) %>%
+  mutate(sample = factor(sample, labels = c("Community Adult", "Adolescent", "Enriched"))) %>%
+  ggplot(aes(fill=sample, y=ImpactPerc, x=item)) +
+  geom_bar(position='dodge', stat='identity') +
+  theme_classic() +
+  labs(x = "Impact Item", y = "Percent Substantially Impacted", color = "Sample") +
+  theme_classic() +
+  theme(legend.position="bottom") +
+  geom_text(aes(item, label = paste0(ImpactPerc, "%"),
+                vjust = -0.3), 
+            position = position_dodge(width = 1))
+
+impvis
+
+```
+
+Responses percentages for the impact item of the MEAL. The percentage of participants who selected 'Often' or 'Always/almost always' is shown as this is the classification used for a substantial impact.
+:::
+
+::: {#supptbl-ImpactsFull}
+```{r ImpactsTable, message = FALSE, echo = FALSE, results = "as-is"}
+
+imp_tab_all$Never <- paste0(imp_tab_all$n_0, " (", imp_tab_all$per_0, ")")
+imp_tab_all$Rarely <- paste0(imp_tab_all$n_1, " (", imp_tab_all$per_1, ")")
+imp_tab_all$Sometimes <- paste0(imp_tab_all$n_2, " (", imp_tab_all$per_2, ")")
+imp_tab_all$Often <- paste0(imp_tab_all$n_3, " (", imp_tab_all$per_3, ")")
+imp_tab_all$Always <- paste0(imp_tab_all$n_4, " (", imp_tab_all$per_4, ")")
+
+imp_tab_all <- imp_tab_all %>%
+  add_row(item = "Community Adults (samples 2 and 3)", .before = 1) %>%
+  add_row(item = "Adolescents (samples 4 and 5)", .before = 6) %>%
+  add_row(item = "Enriched (sample 6)", .before = 11)
+
+imp_tab_all %>% 
+  select(item, Never, Rarely, Sometimes, Often, Always) %>%
+  regulartable() %>% 
+  width(j = 2:6, width = 1) %>%
+  set_header_labels(item = "Impact") %>% 
+  add_header_row(values = c("","Count (%)"), colwidths = c(1, 5)) %>%
+  merge_at(i=c(1), j = 1:6) %>%  # Format the sample sub-headers
+  merge_at(i=c(6), j = 1:6) %>% 
+   merge_at(i=c(11), j = 1:6) %>%
+  bold(i = c(1,6,11)) %>%
+  align(align = "center", part = "body", i = c(1,6,11)) %>%
+  add_footer_lines(value = "Adult N = 244, adolescent N = 336, enriched N = 337") %>%
+  align(align = "center", part = "all", j = 2:6) %>%
+  padding(padding = 2, part = "all")
+
+```
+
+Counts and percentages for endorsements of each impact item on the MEAL
+:::
+
+::: {#supptbl-ImpactsFamMe}
+```{r ImpactsFamMe, message = FALSE, echo = FALSE, results = "as-is"}
+
+imp_me$label <- c("Never", "Rarely", "Sometimes", "Often", "Always")
+  
+imp_me %>%
+  select(label, everything()) %>%
+  select(-value) %>%
+  regulartable() %>% 
+  width(j = 2:5, width = 1) %>%
+  set_header_labels(label = "", ImpFam = "Family", ImpFrPa = "Friends / Partner", ImpHobInt = "Hobbies / Interests", ImpSchWo = "School / Work") %>% 
+  add_header_row(values = c("","MEAL Score Mean (SD)"), colwidths = c(1, 4)) %>%
+  align(align = "center", part = "all", j = c(2:5)) %>%
+  add_footer_lines(value = "For all samples except sample 1.") %>%
+  padding(padding = 2, part = "all")
+  
+```
+
+Mean MEAL score for each impact response option
+
+:::
+
+ANOVA's were used to test whether the levels of impacts being endorsed could significantly explain variation in the MEAL. Firstly, the results of each ANOVA are presented, followed by the Post Hoc comparisons using Scheffe's method to be conservative given the large number of comparisons (5 levels of response).
+
+Overall anova for impact on family: F = `{r} round(imp_anovas_tab$statistic[1], 2)` (df = `{r} round(imp_anovas_tab$df[1], 2)`, p\<0.001)
+
+Overall anova for impact on friends or partner: F = `{r} round(imp_anovas_tab$statistic[3], 2)` (df = `{r} round(imp_anovas_tab$df[3], 2)`, p\<0.001)
+
+Overall anova for impact on school or work: F = `{r} round(imp_anovas_tab$statistic[5], 2)` (df = `{r} round(imp_anovas_tab$df[5], 2)`, p\<0.001)
+
+Overall anova for impact on hobbies or interests: F = `{r} round(imp_anovas_tab$statistic[7], 2)` (df = `{r} round(imp_anovas_tab$df[7], 2)`, p\<0.001)
+
+::: {#supptbl-ImpactsAnova}
+```{r ImpactsAnova, message = FALSE, echo = FALSE, results = "as-is"}
+
+rownames(scheffe_tab) <- NULL
+
+scheffe_tab %>%
+  select(variable, comparison, pval) %>%
+  filter(comparison %in% c("1-0", "2-1", "3-2", "4-3")) %>%
+  mutate(variable = case_match(
+    variable,
+    "ImpFam" ~ "Family",
+    "ImpFrPa" ~ "Friends and/or partner",
+    "ImpSchWo" ~ "School and/or work",
+    "ImpHobInt" ~ "Hobbies and/or interests",
+  )) %>%
+  mutate(pval = as.character(round(pval, 3))) %>%
+  mutate(pval = if_else(pval == "0", "<0.001", pval)) %>%
+  regulartable() %>% 
+  autofit %>%
+  set_header_labels(variable = "Impact", pval = "P value") %>% 
+  merge_v(j = 1) %>%  # Format the sample sub-headers
+  align(align = "center", part = "body", j = 3) %>%
+  add_footer_lines(value = "For all samples excluding sample 1 (N = 917)") %>%
+  padding(padding = 2, part = "all")
+  
+```
+
+Results of ANOVA and Scheffe's post hoc comparison tests for the prediction of MEAL score by each impact question.
+:::
+
+## Section 4: Additional Mood Drift Results
+
+
+The main effects of current state hunger (dichotomised) and time were significant for all moods. However, the interaction terms were not significant for any model, indicating that self-rated current hunger was not associated with the steepness of the mood drift slopes. It is possible that the study design did not provide sufficient variation in hunger levels as no participants were asked to fast or delay food. Nonetheless, the finding that hunger showed a main effect association supports the overall notion that being hungry is associated with worse mood.
+
+::: {#supptbl-LMEall-hun}
+```{r MDoT_mods4, message = FALSE, echo = FALSE, warning = FALSE, results = "as-is"}
+
+# Time*current state hunger interaction models
+
+alldot_hun <- rbind(lmedf(mod_list$mdot_models[[3]]), lmedf(mod_list$bdot_models[[3]]), lmedf(mod_list$fdot_models[[3]]))
+
+alldot_hun %>%
+  mutate(Mood = rep(c("Happy", "Bored", "Frustrated"), each = 8)) %>%
+ # filter(effect == "fixed") %>%
+    mutate(p.value = ifelse(p.value == 0, 
+                            "<0.001", 
+                            as.character(p.value))) %>%
+  select(Mood, effect, group, term, estimate, p.value, conf.low, conf.high) %>%
+  regulartable() %>% 
+  width(j = 1:4, width = 1.5) %>%
+  width(j = 5:8, width = 1) %>%
+  merge_v(j = 1) %>%
+  padding(padding = 2, part = "all") %>%
+  hline(i=8) %>%
+  hline(i=16) %>%
+  align(align = "center", part = "all", j = 5:8) %>%
+  add_footer_lines(value = "Note: B = coefficient estimate from lme model.") %>%
+  set_header_labels(group = "Group", effect = "Effect", term = "Term", estimate = "B", p.value = "p value", conf.low = "95%CI lower", conf.high = "95%CI upper")
+
+```
+
+\
+
+LME with interaction of time and current state hunger on happiness, boredom and frustration
+:::
+
+LMEs were run which included an interaction between time and several previously established mental health measures: ARI, PHQ-8, GAD-7. The results for happiness ratings are presented below as this was the main hypothesis, the results for frustration and boredom were similar to this, with no significant interaction between the relevant predictor variables and time.
+
+::: {#supptbl-LMEhap-ari}
+```{r MDoT_modsARI, message = FALSE, echo = FALSE, warning = FALSE, results = "as-is"}
+
+mdot_ari <- lmedf(mod_list$mdot_models[[5]])
+
+mod_table(
+  model = mdot_ari,
+  caption = "LME with interaction of time and ARI on happiness")
+ 
+```
+
+LME with interaction of time and ARI on happiness
+:::
+
+::: {#supptbl-LMEhap-phq}
+```{r MDoT_modsPHQ8, message = FALSE, echo = FALSE, warning = FALSE, results = "as-is"}
+
+mdot_phq <- lmedf(mod_list$mdot_models[[6]])
+
+mod_table(
+  model = mdot_phq,
+  caption = "LME with interaction of time and PHQ-8 on happiness")
+ 
+```
+
+LME with interaction of time and PHQ-8 on happiness
+:::
+
+::: {#supptbl-LMEhap-gad}
+```{r MDoT_modsGAD, message = FALSE, echo = FALSE, warning = FALSE, results = "as-is"}
+
+mdot_gad <- lmedf(mod_list$mdot_models[[7]])
+
+mod_table(
+  model = mdot_gad,
+  caption = "LME with interaction of time and GAD-7 on happiness")
+
+```
+
+LME with interaction of time and GAD-7 on happiness
+:::
