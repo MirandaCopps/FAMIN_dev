@@ -33,28 +33,26 @@ bibliography: references.bib
 csl: apa.csl
 ---
 
-Miranda Copps^1^, Pablo Vidal-Ribas^2^, Layla Sadek^3^, Clare Llewellyn^4^, Moritz Herle^5^, Gerome Breen^5,6^, Karina Allen^7,8^, Anna Carnegie^5^, Lu Qi^5^, Rosemary Chandler-Wilde^5^, Saakshi Kakar^5,6^, Iona Smith^5,6^, Jutta Joormann^9^, Essi Viding^1^\*, Argyris Stringaris^3^\*
+Miranda Copps^a^, Pablo Vidal-Ribas^b^, Layla Sadek^c^, Clare Llewellyn^d^, Moritz Herle^e^, Gerome Breen^e,f^, Karina Allen^g,h^, Anna Carnegie^e^, Lu Qi^e^, Rosemary Chandler-Wilde^e^, Saakshi Kakar^e,f^, Iona Smith^e,f^, Jutta Joormann^i^, Essi Viding^a^\*, Argyris Stringaris^c,j^\*
 
-### Financial support
+Corresponding author: Miranda Copps (miranda.copps.21\@ucl.ac.uk)
 
-This study was funded by Anna Freud (charity number: 1077106) via MC's PhD position. PVR is supported by grant RYC2021-033369-I, funded by MCIN/AEI/10.13039/501100011033 and the European Union «NextGenerationEU/PRTR» and the CERCA program/Generalitat de Catalunya. KA, GB, AC, LQ and RCW are supported by the Medical Research Council grant no. MR/X030539/1. SK and IS are supported by funding from the National Institute for Health and Care Research (NIHR) Maudsley Biomedical Research Centre (BRC); CL is supported by funding from the NIHR Healthy Weight Policy Research Unit (PR-PRU-0916-21001; grant number 174868). The views expressed are those of the author(s) and not necessarily those of the NIHR or the Department of Health and Social Care. The funders had no role in the design, methods, results, interpretation, writing, or conclusions of this manuscript.
+Other author emails: pablo.vidalribas\@sjd.es; layla.sadek.24\@ucl.ac.uk; c.llewellyn\@ucl.ac.uk; moritz.1.herle\@kcl.ac.uk; gerome.breen\@kcl.ac.uk; karina.allen\@slam.nhs.uk; anna.carnegie\@kcl.ac.uk; lu.qi\@kcl.ac.uk; rosemary.1.chandler-wilde\@kcl.ac.uk; saakshi.kakar\@kcl.ac.uk; iona.smith\@kcl.ac.uk; jutta.joormann\@yale.edu; e.viding\@ucl.ac.uk; a.stringaris\@ucl.ac.uk\
+
+a.  Division of Psychology and Language Sciences, University College London, London, UK
+b.  Child and Adolescent Mental Health Research Group, Institut de Recerca Sant Joan de Déu (IRSJD), Esplugues de Llobregat, Barcelona, Spain
+c.  Division of Psychiatry, University College London, London, UK
+d.  Department of Behavioural Science & Health, University College London, London, UK
+e.  Social, Genetic & Developmental Psychiatry Centre, Institute of Psychiatry, Psychology & Neuroscience, King's College London, London, UK
+f.  UK National Institute for Health and Social Care Research (NIHR) Biomedical Research Centre for Mental Health, South London and Maudsley Hospital, London, UK
+g.  Eating Disorders Service, South London and Maudsley NHS Foundation Trust, London, UK
+h.  Centre for Research in Eating and Weight Disorders, Institute of Psychiatry, Psychology & Neuroscience, King's College London
+i.  Department of Psychology, Yale University, New Haven, CT, USA
+j.  First Department of Psychiatry, Aiginiteion Hospital, National and Kapodistrian University of Athens, Athens, Greece
 
 \
-
-1.  Division of Psychology and Language Sciences, University College London, London, UK
-2.  Child and Adolescent Mental Health Research Group, Institut de Recerca Sant Joan de Déu (IRSJD), Esplugues de Llobregat, Barcelona, Spain
-3.  Division of Psychiatry, University College London, London, UK
-4.  Department of Behavioural Science & Health, University College London, London, UK
-5.  Social, Genetic & Developmental Psychiatry Centre, Institute of Psychiatry, Psychology & Neuroscience, King's College London, London, UK
-6.  UK National Institute for Health and Social Care Research (NIHR) Biomedical Research Centre for Mental Health, South London and Maudsley Hospital, London, UK
-7.  Eating Disorders Service, South London and Maudsley NHS Foundation Trust, London, UK
-8.  Centre for Research in Eating and Weight Disorders, Institute of Psychiatry, Psychology & Neuroscience, King's College London
-9.  Department of Psychology, Yale University, New Haven, CT, USA
-
-\
-\*EV and AS share joint last author.
-\
-Word Count: 4,434
+\*EV and AS share joint last author.\
+Word Count: XXXX
 
 ```{r Setup, message = FALSE, results= FALSE, echo = FALSE, warning = FALSE}
 options(knitr.kable.NA = '')
@@ -195,8 +193,7 @@ sam <- c("Sample 1" = "1", "Sample 2" = "2", "Sample 3" = "3", "Sample 4" = "4",
 ntab <- scal %>%
   group_by(sample) %>%
   summarise(
-    Total = n()
-  ) %>%
+    Total = n()) %>%
   pivot_wider(names_from = sample, values_from = Total) %>%
   rename(all_of(sam)) %>%
   mutate(Measure = "Total N") %>%
@@ -294,11 +291,43 @@ scal <- scal %>%
     TRUE ~ "No"
   ))
 
-mhtab <- scal %>%
+scal <- scal %>% # For any experience of dep and anx (for ED this was completed in data prep steps)
+  mutate(dep_exp = case_when(
+    dep_tho == "1" ~ "Yes",
+    dep_diag == "1" ~ "Yes",
+    TRUE ~ "No"
+  )) %>%
+  mutate(anx_exp = case_when(
+    anx_tho == "1" ~ "Yes",
+    anx_diag == "1" ~ "Yes",
+    TRUE ~ "No"
+  )) %>%
+  mutate(ed_exp = case_match(ed_exp,
+    1 ~ "Yes",
+    0 ~ "No",
+    TRUE ~ "No"
+  ))
+
+mhtab_any <- scal %>%
   group_by(sample, mh_all) %>%
   summarise(
-    Total = n()
-  ) %>% 
+    Total = n()) %>% 
+  group_by(sample) %>%
+  mutate(SampleTotal = sum(Total)) %>%
+  mutate(Percent = round(Total/SampleTotal * 100),
+         Total = paste0(Total, " (", Percent, ")")) %>%
+  select(-SampleTotal, -Percent) %>%
+  pivot_wider(names_from = sample, values_from = Total) %>%
+  rename(all_of(sam))  %>%
+  rename("Measure" = mh_all) %>%
+  arrange(factor(Measure, levels = c('Yes', 'No'))) %>%
+  mutate(Condition = "Any")
+
+
+deptab <- scal %>%
+  group_by(sample, dep_exp) %>%
+  summarise(
+    Total = n()) %>% 
   group_by(sample) %>%
   mutate(SampleTotal = sum(Total)) %>%
   mutate(Percent = round(Total/SampleTotal * 100),
@@ -306,8 +335,47 @@ mhtab <- scal %>%
   select(-SampleTotal, -Percent) %>%
   pivot_wider(names_from = sample, values_from = Total) %>%
   rename(all_of(sam)) %>%
-  rename("Measure" = mh_all) %>%
-  arrange(factor(Measure, levels = c('Yes', 'No', 'Prefer not to say')))
+  rename("Measure" = dep_exp) %>%
+  arrange(factor(Measure, levels = c('Yes', 'No'))) %>%
+  mutate(Condition = "Depression")
+
+anxtab <- scal %>%
+  group_by(sample, anx_exp) %>%
+  summarise(
+    Total = n()) %>% 
+  group_by(sample) %>%
+  mutate(SampleTotal = sum(Total)) %>%
+  mutate(Percent = round(Total/SampleTotal * 100),
+         Total = paste0(Total, " (", Percent, ")")) %>%
+  select(-SampleTotal, -Percent) %>%
+  pivot_wider(names_from = sample, values_from = Total) %>%
+  rename(all_of(sam)) %>%
+  rename("Measure" = anx_exp) %>%
+  arrange(factor(Measure, levels = c('Yes', 'No'))) %>%
+  mutate(Condition = "Anxiety")
+
+edtab <- scal %>%
+  group_by(sample, ed_exp) %>%
+  summarise(
+    Total = n()) %>% 
+  group_by(sample) %>%
+  mutate(SampleTotal = sum(Total)) %>%
+  mutate(Percent = round(Total/SampleTotal * 100),
+         Total = paste0(Total, " (", Percent, ")")) %>%
+  select(-SampleTotal, -Percent) %>%
+  pivot_wider(names_from = sample, values_from = Total) %>%
+  rename(all_of(sam)) %>%
+  rename("Measure" = ed_exp) %>%
+  arrange(factor(Measure, levels = c('Yes', 'No'))) %>%
+  mutate(Condition = "Eating disorders")
+
+mhtab <- rbind(mhtab_any, deptab, anxtab, edtab)
+
+mhtab <- mhtab %>%
+  filter(Measure == "Yes") %>%
+  select(Condition, `Sample 1`, `Sample 2`, `Sample 3`, `Sample 4`, `Sample 5`, `Sample 6`) %>%
+  rename(Measure = Condition)
+
 
 ```
 
@@ -1555,15 +1623,18 @@ return(mi.comp)
 
 # New variable for MI for both sets of tests 
 # for enriched data: any ED (including co-occurance), GLAD only panel
-# Sample sizes are: AD:249, ED: 88
+# Sample sizes are: AD: 147, ED: 190
+
 scal <- scal %>%
   mutate(mi_group = case_when(
-    panel == "EDGI UK" ~ "ED",
-    panel == "EDGI UK,GLAD" ~ "ED",
-    panel == "GLAD" ~ "AD",
+    sample == "1" ~ "Community Adult",
+    sample == "2" ~ "Community Adult",
+    sample == "3" ~ "Community Adult",
     sample == "4" ~ "Adolescent",
     sample == "5" ~ "Adolescent",
-    TRUE ~ "Community Adult"))
+    ed_exp == "Yes" ~ "ED",
+    TRUE ~ "AD")) # Note: this AD group also includes 14 participants in GLAD who reported no mh disorder history
+
 
 # Test MI between community adults and ado
 mi_comp_ad <- scal %>% 
@@ -1964,28 +2035,6 @@ group_by(Fac1tot, trial, Emo) %>%
   ) %>%
   filter(!is.na(Fac1tot))
 
-# Summary by quartile of mood (for vis)
-# create MEAL-i (Fac1tot) quartiles 
-mood <- within(mood, MEALi_q <- as.integer(cut(Fac1tot, quantile(Fac1tot, probs=0:4/4, na.rm=TRUE), include.lowest=TRUE)))
-
-MEALiq_mood_sum <- mood  %>% 
-group_by(MEALi_q, trial, Emo) %>% 
-  reframe(
-    trial = trial,
-    csum_t = csum_t,
-    t_s = t_s,
-    emotion = factor(Emo, levels = emotions),
-    MEALi_q = MEALi_q,
-    mean = mean(Response),
-    SE = sd(Response) / sqrt(n())) %>%
-  mutate(quartile = case_match(MEALi_q,
-    1 ~ "1st",
-    2 ~ "2nd",
-    3 ~ "3rd",
-    4 ~ "4th")) %>%
-  filter(!is.na(MEALi_q))
-
-
 # Summary by hunger dichotomised (actual responses)
 hunger_mood_sum <- mood  %>% 
 group_by(h_bi, trial, Emo) %>% 
@@ -2091,12 +2140,22 @@ three_hap_vis <- three_hap_sum %>%
 {{< pagebreak >}}
 
 ::: {custom-style="CentreBold"}
+Highlights
+:::
+
+-   The Mood, Emotions and Appetite List (MEAL) measures hunger-related mood dysregulation in adults and adolescents in the community, and adults with a history of mental health disorder
+-   Hunger-related mood dysregulation is correlated with mental health symptoms and functioning in daily life
+-   Hunger-related irritability (a subscale of the MEAL) is associated with faster worsening of mood during experimentally induced frustration
+
+{{< pagebreak >}}
+
+::: {custom-style="CentreBold"}
 Abstract
 :::
 
 **Background**
 
-Some people experience mood changes when hungry. However, the relevance of this phenomenon to clinical conditions, such as depression and eating disorders, is understudied. Therefore, we devised a questionnaire to measure hunger-related mood dysregulation.
+Some people experience mood changes when hungry. However, the relevance of this phenomenon to clinical conditions, such as depression, anxiety and eating disorders, is understudied. Therefore, we devised a questionnaire to measure hunger-related mood dysregulation.
 
 **Methods**
 
@@ -2104,7 +2163,7 @@ We developed and validated the Mood, Emotions and Appetite List (MEAL) using exp
 
 **Results**
 
-The MEAL showed good psychometric properties, capturing three factors for hunger-related 'irritability', 'low mood' and 'somatic feelings' (RMSEA = 0.03 in community adults, 0.05 in community adolescents, 0.08 in adults with mental health disorder history). Quantitative and qualitative responses evidenced that hunger-related mood dysregulation impacts relationships, work and other activities. MEAL scores were associated with irritability, depression, anxiety and menstrual symptoms. In the mood drift task, the irritability subscale (MEAL-i) demonstrated a significant interaction with time, such that individuals with higher MEAL-i scores reported steeper decreases in happiness ($B$ = -0.11; 95% CI: -0.16–-0.06) and steeper increases in boredom ($B$ = 0.06; 95% CI: 0.00–0.12) and frustration ($B$ = 0.12; 95% CI: 0.05–0.19).
+The MEAL showed good psychometric properties, capturing three factors for hunger-related 'irritability', 'low mood' and 'somatic feelings' (RMSEA = 0.03 in community adults, 0.05 in community adolescents, 0.08 in adults with mental health disorder history). Quantitative and qualitative responses evidenced that hunger-related mood dysregulation impacts relationships, work and hobbies. MEAL scores were associated with irritability, depression, anxiety and menstrual symptoms. In the mood drift task, the irritability subscale (MEAL-i) demonstrated a significant interaction with time, such that individuals with higher MEAL-i scores reported steeper decreases in happiness ($B$ = -0.11; 95% CI: -0.16–-0.06) and steeper increases in boredom ($B$ = 0.06; 95% CI: 0.00–0.12) and frustration ($B$ = 0.12; 95% CI: 0.05–0.19).
 
 **Conclusions**
 
@@ -2114,15 +2173,15 @@ The MEAL measures individual differences in hunger-related mood dysregulation, i
 
 ### Introduction
 
-Some people experience intense irritability when hungry, colloquially termed “hanger” [@monello1967; @stevenson_interoceptive_2023], and evidence suggests that hunger also elicits other negative feelings [@swami_hangry_2022]. Are such negatively valenced experiences innocuous or do they signal risk for adverse outcomes? This question remains surprisingly understudied given its potential implications both for understanding behaviour and preventing negative outcomes. In this pre-registered study, we report on how to measure inter-individual differences in hunger-related mood dysregulation, examine how these relate to psychopathology and impairment, and experimentally test whether these trait differences impact momentary mood. We examine these questions in adults and adolescents in the community, and in people with a history of mental health disorder.
+Some people experience intense irritability when hungry, colloquially termed “hanger” [@monello1967; @stevenson_interoceptive_2023], and evidence suggests that hunger also elicits other negative feelings [@swami_hangry_2022]. Are such negatively valenced experiences innocuous or do they signal risk for adverse outcomes, such as mood disorders? This question remains surprisingly understudied given its potential implications both for understanding behaviour and preventing negative outcomes. In this pre-registered study, we report on how to measure inter-individual differences in hunger-related mood dysregulation, examine how these relate to mental health symptoms and impairment, and experimentally test whether these trait differences impact momentary mood. We examine these questions in adults and adolescents in the community, and in people with a history of depression, anxiety or eating disorder.
 
 Studying the relationship between food intake and mood is critical to understanding human behaviour and informing clinical practice. Mood relates to fluctuations in the environment [@nettle_evolutionary_2012], helping motivate behaviour that increases chances of survival. Scarcity of food is a threat to survival and food has hedonic properties for humans. Therefore, it is intuitive that mood tracking of hunger would be adaptive, which would explain the link between hunger and mood dysregulation. Experimental evidence supports this theory. Women showed increased anger, tension, fatigue and confusion, and lower vigour after an overnight fast [@ackermans_hunger_2022]; adolescents were less alert, calm and content after missing breakfast [@defeyter_effect_2013]; and animals displayed increased aggression after food restriction [@edmunds2021]. Similarly, studies link blood glucose levels to aggressive tendencies [@dewall_sweetened_2011; @bushman_low_2014].
 
-From a clinical perspective, the question arises as to whether hunger-related mood dysregulation signals meaningful vulnerability to states of hunger in a way that indicates risk of psychopathology or whether they are transient and inconsequential. If the former, they would be expected to impact daily life and to be a marker of more general dysregulated mood in response to environmental triggers. There are several reasons why hunger-related mood dysregulation may indicate risk for psychopathology. First, many mental disorders involve disturbances in mood and eating. For example, appetite changes are a symptom of depression [@simmons2020]; restrictive eating disorders often co-occur with low mood [@americanpsychiatricassociation2013]; some people binge eat to cope with negative emotions [@evers_feeding_2010]. Second, hunger may be particularly relevant to children and young people's mental health as they learn how to interpret bodily cues for hunger, via interoception, and how to employ emotion regulation strategies [@harshaw_interoceptive_2015; @stevenson_development_2023]. Rates of mood and eating disorders also increase during adolescence, and children and young people may find that their eating is regulated in school or by parents.
+From a clinical perspective, the question arises as to whether hunger-related mood dysregulation signals meaningful vulnerability to states of hunger in a way that indicates risk of psychopathology or whether they are transient and inconsequential. If the former, they would be expected to impact daily life and to be a marker of more general dysregulated mood in response to environmental triggers. There are several reasons why hunger-related mood dysregulation may indicate risk for psychopathology. First, many mental health disorders involve disturbances in mood and eating. For example, appetite changes are a symptom of depression [@simmons2020]; eating disorders often co-occur with affective disorders [@eck2021] and some people binge eat to cope with negative emotions [@evers_feeding_2010]. Second, hunger may be particularly relevant to children and young people's mental health as they learn how to interpret bodily cues for hunger, via interoception, and how to employ emotion regulation strategies [@harshaw_interoceptive_2015; @stevenson_development_2023]. Rates of mood and eating disorders also increase during adolescence, and children and young people may find that their eating is regulated in school or by parents.
 
 To examine mood dysregulation during hunger we need valid and reliable measurements. Most studies on hunger and mood have used experimental fasting protocols, which are not always feasible. With that in mind, we present the development and validation of a self-reported measure of hunger-related mood dysregulation. For such a measure to be valuable it should be associated not only with functioning and mental health but also with experimental mood induction, such as frustration, to complement prior studies. One frustrating environment in daily life is being forced to wait [@jangraw_highly_2023]. Waiting is generally aversive (e.g. the impatience felt when queuing), and one possible reason is that it obstructs the adaptive behaviour of exploring or exploiting the environment. It is expected that hunger - which can represent threat or absence of reward, and can reduce emotions regulation abilities - would make people more sensitive to experience aversion during waiting, as it is an additional signal that the organism is in a non-optimal state [@jangraw_highly_2023].
 
-We developed (aim 1) the Mood, Emotions and Appetite List (MEAL) to measure inter-individual differences in hunger-related mood dysregulation in community adults and adolescents, and individuals with a history of mental health disorder. To refine the MEAL, we used an iterative process of exploratory and confirmatory factor analysis (EFA and CFA, respectively), with expert input and participants' qualitative responses. We hypothesised that hunger-related mood dysregulation would show a multifactorial structure with good psychometric properties and invariance across samples. Next, we examined (aim 2) the relationship of the MEAL to mental health and functioning. We hypothesised that hunger-related mood dysregulation would be positively associated with irritability, depression, anxiety, impacts on daily life and menstrual symptoms (motivated by reported concurrent menstrual appetite and mood changes). Lastly (aim 3), we examined whether MEAL scores moderated momentary mood responses during the mood drift task. We hypothesised that higher MEAL scores would predict faster mood worsening. Our hypotheses were pre-registered at \[https://osf.io/drst5\].
+We developed (aim 1) the Mood, Emotions and Appetite List (MEAL) to measure inter-individual differences in hunger-related mood dysregulation in community adults and adolescents, and individuals with a history of mental health disorder (depression, anxiety or eating disorders). To refine the MEAL, we used an iterative process of exploratory and confirmatory factor analysis (EFA and CFA, respectively), with expert input and participants' qualitative responses. We hypothesised that hunger-related mood dysregulation would show a multifactorial structure with good psychometric properties and invariance across samples. Next, we examined (aim 2) the relationship of the MEAL to mental health and functioning. We hypothesised that hunger-related mood dysregulation would be positively associated with irritability, depression, anxiety, impacts on daily life and menstrual symptoms (motivated by reported concurrent menstrual appetite and mood changes). Lastly (aim 3), we examined whether MEAL scores moderated momentary mood responses during the mood drift task. We hypothesised that higher MEAL scores would predict faster mood worsening. Our hypotheses were pre-registered at \[https://osf.io/drst5\].
 
 ### Methods
 
@@ -2144,8 +2203,6 @@ UCL's Ethics Committee (24867, 28647) and KCL's Health Faculties (Purple) Resear
 
 Initially, we developed 20 items on hunger-related mood dysregulation, in consultation with clinicians, and mental health and appetite researchers. Before completing the MEAL, participants in samples 1-5 were asked "Do you think that being hungry changes your mood in day-to-day life? What changes do you notice? Does this impact your work, school, relationships or other aspects of your life?" (free-text response). We coded all responses, and grouped them into themes for mood, somatic feelings and impacts. Responses from sample 1 were used to inform the refinement of the questionnaire. For the MEAL, all participants were presented with the instruction "Please indicate how much of the time you think the following statements apply to you". The response options were "Never / Almost Never", "Rarely", "Sometimes", "Often" and "Always / Almost Always", which were coded as 0 to 4. We collected responses to these items from sample 1. Using EFA (details in Section 1 of Supplementary Materials) and qualitative feedback, we formed an updated set of 16 items. This comprised 15 core items and one impact item. Impacts covered four areas: (1) relationships with family, (2) relationships with friends or partners, (3) hobbies and/or interests and (4) school and/or work. Sample 2 answered these 16-items (15 + 1), and CFA was performed. After removing items for parsimony, the final version of the MEAL had 12 items (11 + 1), with three subscales for hunger-related irritability, low mood and somatic feelings (MEAL-i, MEAL-l and MEAL-s, respectively). This final version was administered twice (two-weeks apart) in sample 3, and once in samples 4-6.
 
-
-
 ##### Physical health and physiology
 
 Adult participants (samples 1-3 and 6) were asked for their height and weight, to calculate body mass index (BMI). The five-item hunger sensitivity subscale of the Adult Eating Behaviour Questionnaire (AEBQ-h) was included for samples 1-3 to test convergent validity [@hunot_appetitive_2016]. Participants rated their current hunger from 0 to 100 using a visual analogue scale (VAS). The resulting distribution was bi-modal, thus current hunger was dichotomised using a median split. We asked female participants in samples 2 and 3 optional questions about regularity of their menstrual cycles, symptoms they experience before and during menstruation (e.g. increased appetite, irritability; coded as 1 or 0 for presence or absence, respectively) and use of hormonal contraception.
@@ -2156,7 +2213,7 @@ All participants were asked if they had ever been diagnosed with or suspected th
 
 ##### Mood drift task
 
-Samples 1-4 completed the mood drift task [@jangraw_highly_2023]. In each trial participants waited for 30 seconds, while looking at a fixation cross, and then rated their mood from 0-100 on three VAS scales (happy, bored and frustrated). There were 12 trials, with a total six minutes of waiting time, and there was an additional mood rating before the first trial. Participants could take any amount of time on mood ratings so we removed outlier participants for total time on the task (\> $Q3+1.5*IQR$ or \> $Q1 - 1.5*IQR$, where $Q$ = quartile and $IQR$ = interquartile range). After removing 40 outliers; 15 participants who had technical issues with the task (6 adults, 9 adolescents); and  the final N for the task was 526 (400 adults and 126 adolescents).
+Samples 1-4 completed the mood drift task [@jangraw_highly_2023]. In each trial participants waited for 30 seconds, while looking at a fixation cross, and then rated their mood from 0-100 on three VAS scales (happy, bored and frustrated). There were 12 trials, with a total six minutes of waiting time, and there was an additional mood rating before the first trial. Participants could take any amount of time on mood ratings so we removed outlier participants for total time on the task (\> $Q3+1.5*IQR$ or \> $Q1 - 1.5*IQR$, where $Q$ = quartile and $IQR$ = interquartile range). After removing 40 outliers; 15 participants who had technical issues with the task (6 adults, 9 adolescents); and the final N for the task was 526 (400 adults and 126 adolescents).
 
 After removing 40 outliers and 6 participants who had technical issues (all adults) the final N for the task was 526 (400 adults and 126 adolescents).
 
@@ -2231,7 +2288,7 @@ demogtab %>%
   bold(i = c(4,11,17))%>% 
   colformat_char(na_str = "-") %>% # fill in blanks
   align(align = "center", part = "all", j = 2:7) %>%
-  add_footer_lines(value = "Community adults from samples 1-3 were Prolific users; community adolescents from samples 4 and 5 were recruited from secondary schools in South East England, East England and London; and adults from sample 6 were recruited from the GLAD and EDGI UK studies.") %>%
+  add_footer_lines(value = "Community adults from samples 1-3 were Prolific users; community adolescents from samples 4 and 5 were recruited from secondary schools in South East England, East England and London; and adults from sample 6 were recruited from the GLAD and EDGI UK studies. Mental health conditions are both diagnosed and self-diagnosed for all samples excluding 5, where only diagnoses were recorded.") %>%
   padding(padding = 2, part = "all") %>%
   add_header_row(values = c("", "Community Adult", "Community Adolescent", "Enriched"), colwidths = c(1, 3, 2, 1))
 
@@ -2481,7 +2538,6 @@ alldot_fam %>%
 
 ```
 
-
 Current state hunger showed main effect associations with all three mood states, but was not associated with the steepness of mood slopes. Similarly, none of the ARI, PHQ-8 or GAD-7 moderated the steepness of the mood slopes. Details of these analyses are in section 4 of the Supplementary Materials (@supptbl-LMEall-hun -21).
 
 ### Discussion
@@ -2492,7 +2548,7 @@ The MEAL’s three-factor structure highlights the importance of considering mul
 
 Females and younger participants scored higher than males and older participants on the MEAL, respectively. The pattern of sex differences on the MEAL is in keeping with response trends on self-rated irritability [@vidal-ribas_informant_2023-1], depression [@thibodeau_phq-9_2014] and anxiety [@spitzer_brief_2006] symptom scales. These sex differences may be driven by a combination of physiology, environmental risk factors, socialisation and methodological features [@patalay2023]. The trend of FAMIN declining with age may be partially explained by adolescence being a time of high energy requirements [@das2017], whereas older age is associated with appetite decline [@giezenaar2016]. The association of menstrual cycle symptoms with the MEAL suggests a role of hormonal fluctuations in hunger-related mood dysregulation.
 
-We also demonstrated the association of hunger-related mood dysregulation to mental health. In community adults, MEAL scores showed correlations with irritability, depression and anxiety; while in adolescents it showed small correlations with irritability and moderate correlations with the depression and anxiety. These associations could represent hunger-related mood dysregulation being a risk factor for poor mental health, although longitudinal designs would be required to test this pathway explicitly. The slightly lower scores in the affective disorder subgroup was surprising given the correlations above, as well as observations of appetite changes in depression [@simmons2020] and anxiety [@rodriguez-moreno2022]. The lack of statistical differences in MEAL scores between community adults and the subgroup with history of eating disorder experience was less surprising as food restriction may induce feelings of satisfaction for some people with anorexia nervosa.
+We also demonstrated the association of hunger-related mood dysregulation to mental health. In community adults, MEAL scores showed correlations with irritability, depression and anxiety; while in adolescents it showed small correlations with irritability and moderate correlations with the depression and anxiety. These associations could represent hunger-related mood dysregulation being a risk factor for poor mental health, although longitudinal designs would be required to test this pathway explicitly. The slightly lower scores in the affective disorder subgroup was surprising given the correlations above, as well as observations of appetite changes in depression [@simmons2020]. The lack of statistical differences in MEAL scores between community adults and the subgroup with history of eating disorder experience was less surprising as food restriction may induce feelings of satisfaction for some people with anorexia nervosa.
 
 We also show that the MEAL captures impairment in people’s everyday lives, particularly their inter-personal relationships, indicating further that hunger-related mood dysregulation is not simply a transient and innocuous phenomenon. Previous work showed a link between blood glucose and intermarital conflict [@bushman_low_2014], but did not test whether hunger-related mood dysregulation mediated this. Participants referenced difficulty focussing at work or school in qualitative feedback. Therefore, hunger-related mood dysregulation may pose a particular risk in settings where meals are regulated such as schools [@afridi_hunger_2019], shift work [@heath_associations_2019] and prisons [@kushmerick-mccune_hunger_2024].
 
@@ -2530,6 +2586,10 @@ We would like to thank the Prolific users and school pupils who took part in thi
 
 CRediT Taxonomy. Conceptualization – MC, PVR, CL, MH, GB, KA, AC, JJ, EV, AS. Data curation – MC, LS, LQ, RCW, SK. Formal analysis – MC, LS, LQ, RCW, SK. Investigation - MC, LS. Methodology - MC, CL, MH, GB, KA, EV, AS. Project administration – MC, AC. Resources - IS. Supervision – EV, AS. Writing original draft – MC, AS. Writing review & editing – MC, PVR, LS, CL, MH, GB, KA, AC, JJ, EV, AS.
 
+### Financial support
+
+This study was funded by Anna Freud (charity number: 1077106) via MC's PhD position. PVR is supported by grant RYC2021-033369-I, funded by MCIN/AEI/10.13039/501100011033 and the European Union «NextGenerationEU/PRTR» and the CERCA program/Generalitat de Catalunya. KA, GB, AC, LQ and RCW are supported by the Medical Research Council grant no. MR/X030539/1. SK and IS are supported by funding from the National Institute for Health and Care Research (NIHR) Maudsley Biomedical Research Centre (BRC); CL is supported by funding from the NIHR Healthy Weight Policy Research Unit (PR-PRU-0916-21001; grant number 174868). The views expressed are those of the author(s) and not necessarily those of the NIHR or the Department of Health and Social Care. The funders had no role in the design, methods, results, interpretation, writing, or conclusions of this manuscript.
+
 ### Ethical standards
 
 The authors assert that all procedures contributing to this work comply with the ethical standards of the relevant national and institutional committees on human experimentation and with the Helsinki Declaration of 1975, as revised in 2008.
@@ -2547,7 +2607,7 @@ The authors assert that all procedures contributing to this work comply with the
 
 ```{r FamLmeVis, message=FALSE, results='asis', warning=FALSE, echo=FALSE}
 #| label: fig-famlme
-#| fig-cap: "Means and standard errors of mood ratings by trial during the mood drift task, grouped by participants' MEAL-i score quartile rank. Note: quartile ranks are used for visualisation purposes only. The n = 523 as 3 adolescent participants did not have complete MEAL-i data."
+#| fig-cap: "Means and standard errors of mood ratings by trial during the mood drift task, grouped by participants' MEAL-i score. Note: n = 523 as 3 adolescent participants did not have complete MEAL-i data."
 
 plotout <- function(plotname) {
 ggsave(
@@ -2560,24 +2620,43 @@ ggsave(
   dpi = 800)
 }
 
-MEALiq_mood_sum %>% 
-  ggplot(aes(x = trial, y = mean, group = quartile)) +
-  geom_line(linewidth = 0.5, aes (linetype = quartile)) +
-  scale_linetype_manual(values=c("solid", "dashed", "twodash", "dotted"))+
-  geom_ribbon(aes(ymin = mean - SE, ymax = mean + SE), alpha = 0.2) +
+MEAL_mood_sum %>% 
+  ggplot(aes(x = trial, y = mean, group = Fac1tot)) +
+  geom_line(linewidth = 1, aes (color = Fac1tot)) +
+  geom_ribbon(aes(ymin = mean - SE, ymax = mean + SE, fill = Fac1tot), alpha = 0.2) +
   xlab("Trial") +
   ylab("Average Mood Rating") +
-  labs(linetype = "MEAL-i quartile") +
-  theme_bw() +
+  labs(color = "MEAL-i score") +
+  theme_classic() +
   scale_x_continuous(limits=c(0,12), expand = c(0, 0)) + 
   scale_y_continuous(limits=c(0,100),expand = c(0, 0)) +
   guides(fill="none") +
   facet_wrap(~emotion) + 
-  theme(panel.spacing.x = unit(0.7, "lines"), legend.position = "bottom", text=element_text(size=8))
+  theme(panel.spacing.x = unit(0.7, "lines"), legend.position = "bottom", text=element_text(size=10), legend.key.size = unit(0.5, 'cm'))
 
-plotout("Copps_Fig1_MealMoodDrift.tif")
+# plotout("FIG1TIF.tif")
 
 ```
+
+```{r CorVis, message=FALSE, results='asis', warning=FALSE, echo=FALSE}
+# For graphical abstract ONLY
+
+ga_cor <- rbind(cortab, cortab_ad) %>%
+  filter(Factor == "MEAL") %>%
+  mutate(
+    Irritability = substr(ARI, 1, 4),
+    Depression = substr(`PHQ-8`, 1, 4),
+    Anxiety = substr(`GAD-7`, 1, 4)
+  )
+
+ga_cor$Sample <- c("Adult", "Adolescent")
+ga_cor <- ga_cor %>%
+  select(Sample, Irritability, Depression, Anxiety)
+
+
+```
+
+
 
 {{< pagebreak >}}
 
@@ -2587,7 +2666,7 @@ plotout("Copps_Fig1_MealMoodDrift.tif")
 
 This section contains the results of the exploratory and confirmatory factor analyses (EFA and CFA) in order to provide details of the several rounds of iteration which took place.
 
-All EFA pertains to sample 1 (N = 202) and all CFA to sample 2 (N=160), recruited from Prolific.com.
+All EFA pertains to sample 1 (n = 202) and all CFA to sample 2 (n = 160), recruited from Prolific.com.
 
 The initial list of 20 items is displayed in @supptbl-Items20, item numbers (with the prefix HM for hunger and mood) are used to refer to the items throughout this supplement.
 
@@ -2784,9 +2863,7 @@ Correlation matrix for 15-items in sample 2
 
 To make the questionnaire more concise, three items were removed from MEAL-s while retaining Cronbach's $\alpha$ of 0.7-0.9 and suitable item content. Leaving 13 items (12 core items + 1 impact item).
 
-On the 12 items, the observed Pearson's *r*s between the factors were: 0.77 for MEAL-i and MEAL-l, 0.71 for MEAL-i and MEAL-s, and 0.76 for MEAL-l and MEAL-s (all *p* \< 0.001). To minimise redundancy, factor correlations were re-calculated removing one item at a time. This resulted in one item being removed from MEAL-s. The updated factor correlations were *r* = 0.63 for MEAL-i and MEAL-s, and *r* = 0.74 for MEAL-l and MEAL-s (*p* \< 0.001). We compared this final (11 item) model to one-factor and two-factor models (@supptbl-CFAModelFitComp). Model fit indices favoured the three-factor model (lower AIC and BIC), and this was the only model to meet all criteria.
-
-The high Cronbach's $\alpha$ and high correlations between factors could suggest redundancy within the questionnaire. However, we did not address this further as the constructs are expected to be related, and the three-factor model fit the data better than one- or two-factor models.
+On the 12 items, the observed Pearson's *r*s between the factors were: 0.77 for MEAL-i and MEAL-l, 0.71 for MEAL-i and MEAL-s, and 0.76 for MEAL-l and MEAL-s (all *p* \< 0.001). To minimise redundancy, factor correlations were re-calculated removing one item at a time. This resulted in one item being removed from MEAL-s. The updated factor correlations were *r* = 0.63 for MEAL-i and MEAL-s, and *r* = 0.74 for MEAL-l and MEAL-s (*p* \< 0.001). We compared this final (11 item) model to one-factor and two-factor models (@supptbl-CFAModelFitComp). Model fit indices favoured the three-factor model (lower AIC and BIC), and this was the only model to meet all criteria. The high Cronbach's $\alpha$ and high correlations between factors could suggest redundancy within the questionnaire. However, we did not address this further as the constructs are expected to be related, and the three-factor model fit the data better than one- or two-factor models.
 
 ::: {#supptbl-CFAModelFitComp}
 ```{r CFAfitsComp, message = FALSE, echo = FALSE, results = "as-is"}
@@ -2816,6 +2893,8 @@ qual_tab %>%
 
 Summary of the qualitative data codings, grouped by sample
 :::
+
+\
 
 ## Section 3: Impact Item Analysis
 
@@ -2908,7 +2987,6 @@ imp_me %>%
 ```
 
 Mean MEAL score for each impact response option
-
 :::
 
 ANOVA's were used to test whether the levels of impacts being endorsed could significantly explain variation in the MEAL. Firstly, the results of each ANOVA are presented, followed by the Post Hoc comparisons using Scheffe's method to be conservative given the large number of comparisons (5 levels of response).
@@ -2952,7 +3030,6 @@ Results of ANOVA and Scheffe's post hoc comparison tests for the prediction of M
 :::
 
 ## Section 4: Additional Mood Drift Results
-
 
 The main effects of current state hunger (dichotomised) and time were significant for all moods. However, the interaction terms were not significant for any model, indicating that self-rated current hunger was not associated with the steepness of the mood drift slopes. It is possible that the study design did not provide sufficient variation in hunger levels as no participants were asked to fast or delay food. Nonetheless, the finding that hunger showed a main effect association supports the overall notion that being hungry is associated with worse mood.
 
